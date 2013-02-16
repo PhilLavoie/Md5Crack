@@ -1,0 +1,11 @@
+- dictionary
+  - variations:
+    - plain -> O.K.
+    - all caps
+    - camel case
+    - reverse
+    - accents
+    - number replacements e -> 3 and 3 -> e
+    - combinations (up to a maximum)
+- brute force
+  - frequency table

@@ -1,3 +1,6 @@
+/**
+  Module providing utilities for manipulation of hashes and hash strings.
+*/
 module md5util;
 
 import std.ascii;

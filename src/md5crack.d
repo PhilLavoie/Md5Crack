@@ -1,7 +1,7 @@
 module md5crack;
 
 import config;
-import words;
+import dictionary;
 
 import std.stdio;
 import std.conv;
@@ -19,13 +19,13 @@ void main( string[] args ) {
     cfg.parse( args );
     
     if( cfg.useWords ) {
-      auto words = readWords( cfg.wordsFile );
+      auto dict = loadDictionary( cfg.wordsFile );
       
-      foreach( word; words[] ) {
-        auto wordHash = md5Of( word );
+      foreach( entry; dict.entries ) {
+        auto wordHash = md5Of( entry );
                 
         if( wordHash == cfg.hash ) {
-          writeln( "found: ", word );
+          writeln( "found: ", entry );
           return;
         }
       }       

@@ -1,7 +1,7 @@
 module config;
 
 import flags;
-import md5util;
+import md5hash;
 
 import std.stdio;
 import std.conv;
@@ -11,7 +11,7 @@ import std.exception;
 
 struct Config {
   File wordsFile;
-  ubyte[ 16 ] hash;
+  Md5Hash hash;
   bool hashUsed;
   @property bool useWords() { return wordsFile.isOpen(); }
 }
@@ -25,7 +25,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   parser.custom( "-h", "Hash to be cracked.", 
     ( string[] tokens ) {
       enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag -h" );
-      cfg.hash = toHash( tokens[ 0 ] );      
+      cfg.hash = Md5Hash.fromHexa( tokens[ 0 ] );      
       cfg.hashUsed = true;
       return cast( size_t )1;
     }

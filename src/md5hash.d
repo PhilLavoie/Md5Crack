@@ -14,22 +14,22 @@ import std.conv;
 struct Md5Hash {
   ubyte[ 16 ] _hash;
   
-  string toString() {
+  string toString() const {
     char[ 32 ] result;
     size_t i = 0;
     foreach( hashByte; _hash ) {
-      result[ i ] = toHexa( hashByte & 0xff00 );
+      result[ i ] = toHexa( hashByte >>> 4 );
       ++i;
-      result[ i ] = toHexa( hashByte & 0x00ff );
+      result[ i ] = toHexa( hashByte & 0x0f );
       ++i;
     }
     return result.idup;
   }
   
-  bool opEquals( ref in typeof( this ) rhs ) {
+  bool opEquals( ref in typeof( this ) rhs ) const {
     return _hash == rhs._hash;
   }  
-  bool opEquals( ref in ubyte[ 16 ] rhs ) {
+  bool opEquals( ref in ubyte[ 16 ] rhs ) const {
     return _hash == rhs;
   }
   
@@ -38,7 +38,7 @@ struct Md5Hash {
     string provided.
   */
   static typeof( this ) fromHexa( string hexa ) in {
-    assert( hexa.length == 32, "expected a hash string of 32 hexadecimal symbols (16 bytes)" );
+    assert( hexa.length == 32, "expected a hash string of 32 hexadecimal symbols (16 bytes) but got: " ~ hexa );
   } body {
     typeof( this ) result;
     size_t resIndex = 0;
@@ -62,7 +62,7 @@ struct Md5Hash {
   Returns the corresponding hexadecimal symbol.
 */
 char toHexa( ubyte b ) in {
-  assert( b <= 0x00ff, "value " ~ b.to!string ~ " out of bounds, maximum is 0xff" );
+  assert( b <= 0xf, "value " ~ b.to!string ~ " out of bounds, maximum is 0x0f" );
 } body {
   if( b < 10 ) {
     return cast( char )( b + '0' );
@@ -77,7 +77,7 @@ char toHexa( ubyte b ) in {
   Valid hexadecimal digits: 0..9 a..f A..F
 */
 ubyte hexaDigit( dchar c ) {
-  c = c.toLower;
+  c = c.toLower();
  
   switch( c ) {
   case 'a':

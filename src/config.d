@@ -6,14 +6,14 @@ import md5hash;
 import std.stdio;
 import std.conv;
 import std.exception;
-
-//TODO: change the terminology words to dictionary.
+import std.container;
 
 struct Config {
   File wordsFile;
-  Md5Hash hash;
-  bool hashUsed;
+  File hashesFile;
+  
   @property bool useWords() { return wordsFile.isOpen(); }
+  @property bool useHashesFile() { return hashesFile.isOpen(); }
 }
 
 void parse( ref Config cfg, string[] cmdArgs ) in {
@@ -21,24 +21,15 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
 } body {
   Parser parser;  
   parser.file( "-w", "Words dictionary file.", cfg.wordsFile, "r" );
-  
-  parser.custom( "-h", "Hash to be cracked.", 
-    ( string[] tokens ) {
-      enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag -h" );
-      cfg.hash = Md5Hash.fromHexa( tokens[ 0 ] );      
-      cfg.hashUsed = true;
-      return cast( size_t )1;
-    }
-  );
-  
-  
-  auto args = parser.parse( cmdArgs );
-  enforce( args is null || args.length == 0, "unexpected arguments: " ~ to!string( args ) );
+  parser.file( "-hf", "File containing hashes to be cracked", cfg.hashesFile, "r" );
     
-  checkFlags( cfg );
+  auto args = parser.parse( cmdArgs );
+  //Make sure only flags where provided.
+  enforce( args is null || args.length == 0, "unexpected arguments: " ~ to!string( args ) );
+  
+  //Dictionary mandatory.
+  enforce( cfg.wordsFile.isOpen(), "expected a words list to be provided" );
+  //At least one hash must be provided.
+  enforce( cfg.useHashesFile, "expected a hashes file to be provided" );  
 }
 
-private void checkFlags( ref Config cfg ) {
-  enforce( cfg.wordsFile.isOpen(), "expected a words list to be provided" );
-  enforce( cfg.hashUsed, "expected a hash value to be provided" );
-}

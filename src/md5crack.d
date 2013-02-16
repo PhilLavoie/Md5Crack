@@ -2,37 +2,97 @@ module md5crack;
 
 import config;
 import dictionary;
+import md5hash;
+
 
 import std.stdio;
 import std.conv;
 import std.algorithm;
 import std.digest.md;
+import std.range;
+import std.container;
+import std.string;
 
-//TODO: add support for bash treatment of hashes.
 //TODO: add combinations for words: camel case, all caps, different combination of words, etc...
 
+template canInsertBack( T ) {
+  static if( 
+    is( 
+      typeof(
+        () {
+          T t;
+          typeof( t[].front ) e;
+          t.insertBack( e );
+        } 
+      )
+    ) 
+  ) {
+    enum canInsertBack = true;
+  } else {
+    enum canInsertBack = false;
+  }  
+}
+template canInsertBack( T : T* ) {
+  enum canInsertBack = canInsertBack!T;
+}
+
+struct BackInserter( T ) if( canInsertBack!T ) {
+  T source;
+  
+  static if( is( S* T ) ) {
+    alias Element = typeof( S[].front );
+  } else {
+    alias Element = typeof( T.front );
+  }
+  
+  this( T source ) { this.source = source; }  
+  void put( Element e ) {
+    source.insertBack( e );
+  }
+}
+
+auto backInserter( T )( T structure ) {
+  return BackInserter!T( structure );
+}
 
 void main( string[] args ) {
   Config cfg;
 
   try {
     cfg.parse( args );
+    DList!Md5Hash hashes;
+    loadHashes( cfg.hashesFile, backInserter( &hashes ) );      
     
-    if( cfg.useWords ) {
-      auto dict = loadDictionary( cfg.wordsFile );
-      
+    auto dict = loadDictionary( cfg.wordsFile );
+    cfg.wordsFile.close();
+    
+    foreach( hash; hashes[] ) {
+      debug {
+        writeln( "Craking hash: ", hash.toString );
+      }
+    
       foreach( entry; dict.entries ) {
         auto wordHash = md5Of( entry );
                 
-        if( wordHash == cfg.hash ) {
+        if( wordHash == hash ) {
           writeln( "found: ", entry );
-          return;
+          break;
         }
-      }       
-    }
-    
+      }
+    }       
   } catch( Throwable t ) {
     writeln( t.msg );
+  }
+}
+
+void loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash ) ) {
+  //For each line, parse the hash and add it to the structure.
+  foreach( buffer; file.byLine ) {
+    string line = cast( string )buffer;
+    //Ignore white lines.
+    if( line.strip.empty ) { continue; }
+    Md5Hash hash = Md5Hash.fromHexa( cast( string )line );
+    output.put( hash );
   }
 }
 

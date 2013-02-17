@@ -1,7 +1,6 @@
 module md5crack;
 
 import config;
-import dictionary;
 import md5hash;
 
 
@@ -60,18 +59,21 @@ void main( string[] args ) {
 
   try {
     cfg.parse( args );
-    DList!Md5Hash hashes;
-    loadHashes( cfg.hashesFile, backInserter( &hashes ) );      
+    DList!Md5Hash hashesTmp;
+    auto noHashes = loadHashes( cfg.hashesFile, backInserter( &hashesTmp ) );      
+    cfg.hashesFile.close();
+    auto hashes = new Md5Hash[ noHashes ];
+    copy( hashesTmp[], hashes );
     
-    auto dict = loadDictionary( cfg.wordsFile );
+    DList!string dictTmp;
+    auto noPass = loadDictionary( cfg.wordsFile, backInserter( &dictTmp ) );
     cfg.wordsFile.close();
+    auto dict = new string[ noPass ];
+    copy( dictTmp[], dict );
     
     foreach( hash; hashes[] ) {
-      debug {
-        writeln( "Craking hash: ", hash.toString );
-      }
-    
-      foreach( entry; dict.entries ) {
+      
+      foreach( entry; dict[] ) {
         auto wordHash = md5Of( entry );
                 
         if( wordHash == hash ) {
@@ -85,7 +87,8 @@ void main( string[] args ) {
   }
 }
 
-void loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash ) ) {
+size_t loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash ) ) {
+  size_t noHashes = 0;
   //For each line, parse the hash and add it to the structure.
   foreach( buffer; file.byLine ) {
     string line = cast( string )buffer;
@@ -93,7 +96,28 @@ void loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash
     if( line.strip.empty ) { continue; }
     Md5Hash hash = Md5Hash.fromHexa( cast( string )line );
     output.put( hash );
+    ++noHashes;
   }
+  return noHashes;
+}
+
+/**
+  Read the words out of a dictionary file. All pass phrases are delimited using new lines. Everything
+  starting from the first character of a line up to its end is considered a pass phrase (includes potential
+  white spaces). Returns the pass phrases read.
+*/
+size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, string ) ) {
+  size_t noPass = 0;
+  
+  //For each line, copy the buffer into a string and add it
+  //to the dictionary. Every word is entered in lowercase.
+  foreach( buffer; file.byLine ) {
+    string passphrase = buffer.idup.toLower();    
+    output.put( passphrase );
+    ++noPass;
+  }  
+  
+  return noPass;
 }
 
 /*

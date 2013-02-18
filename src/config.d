@@ -13,8 +13,8 @@ struct Config {
   File hashesFile;
   bool plain;
   bool camelCase;
-  size_t minCombinations = 1;
-  size_t maxCombinations = 1;
+  size_t minPermutations = 1;
+  size_t maxPermutations = 1;
   
   @property bool useWords() { return wordsFile.isOpen(); }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
@@ -26,8 +26,8 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   Parser parser;  
   parser.trigger( "--plain", "Use dictionary as is.", cfg.plain );
   parser.trigger( "--camel-case", "Capitalize first lettre of pass phrases. If pass phrases are concatenated, then every first lettre of every pass phrase is capitalized.", cfg.camelCase );
-  parser.value( "--combine-min", "Minimum word combinations.", cfg.minCombinations );
-  parser.value( "--combine-max", "Maximum word combinations.", cfg.maxCombinations );
+  parser.value( "--perms-min", "Minimum pass phrase permutations.", cfg.minPermutations );
+  parser.value( "--perms-max", "Maximum pass phrase permutations.", cfg.maxPermutations );
   
   parser.file( "-w", "Words dictionary file.", cfg.wordsFile, "r" );
   parser.file( "-hf", "File containing hashes to be cracked", cfg.hashesFile, "r" );
@@ -42,6 +42,6 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   //At least one hash must be provided.
   enforce( cfg.useHashesFile, "expected a hashes file to be provided" );  
   
-  enforce( cfg.minCombinations <= cfg.maxCombinations, "combinations minimum is set to " ~ cfg.minCombinations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxCombinations.to!string );
+  enforce( cfg.minPermutations <= cfg.maxPermutations, "combinations minimum is set to " ~ cfg.minPermutations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxPermutations.to!string );
 }
 

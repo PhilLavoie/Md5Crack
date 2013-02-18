@@ -1,17 +1,20 @@
-module combinations;
+/**
+  Module providing the facilities to generate string permutations.
+*/
+module permutations;
 
 import config;
 import std.range;
 import std.conv;
 
-struct Combinations( Range ) {
+struct Permutations( Range ) {
   private Range _source;
   private typeof( Config.minCombinations ) _current;
   private typeof( Config.maxCombinations ) _max;
   private Range[] _ranges;
   private string[] _buffer;
   
-  this( Range source, typeof( _current ) min, typeof( _max ) max ) in { 
+  private this( Range source, typeof( _current ) min, typeof( _max ) max ) in { 
     assert( 0 < min, "expected min: " ~ min.to!string ~ " to be above 0" );
     assert( 0 < max, "expected max: " ~ max.to!string ~ " to be above 0" );
     assert( min <= max, "expected min: " ~ min.to!string ~ " to be <= than max: " ~ max.to!string );
@@ -60,8 +63,8 @@ struct Combinations( Range ) {
 }
 
 
-auto combinationsFor( Range )( in ref Config cfg, Range input ) if( isForwardRange!( Range ) ) {
-  return Combinations!Range( input, cfg.minCombinations, cfg.maxCombinations );
+auto permutationsFor( Range )( in ref Config cfg, Range input ) if( isForwardRange!( Range ) ) {
+  return Permutations!Range( input, cfg.minCombinations, cfg.maxCombinations );
 }
 
 unittest {
@@ -72,11 +75,8 @@ unittest {
   
   import std.algorithm;
   import std.stdio;
-  auto combs = combinationsFor( cfg, words[] );
-  auto mapped = map!"std.algorithm.joiner( a )"( combs );
+  auto perms = combinationsFor( cfg, words[] );
+  auto mapped = map!"std.algorithm.joiner( a )"( perms );
   //assert( equal( words[], mapped ) ); //TODO: post enhancement request for this.
   writeln( mapped );
-  
-
-
 }

@@ -5,12 +5,13 @@ import config;
 import std.ascii;
 import std.string;
 
+//TODO: review this to incorporate support for multiple string transforms.
 alias Transform = string function( string );
 
 struct Variations {
   private Transform[] _transforms;
   
-  this( Transform[] transforms ) {
+  private this( Transform[] transforms ) {
     _transforms = transforms;
   }
   
@@ -19,7 +20,7 @@ struct Variations {
   void popFront() { _transforms = _transforms[ 1 .. $ ]; }
 }
 
-private string capitalFirst( string pass ) {
+private string capFirst( string pass ) {
   char[] buffer = pass.dup; //Make a copy;
   buffer[ 0 ] = cast( char )toUpper( buffer[ 0 ] ); //Capitalize first letter.
   return cast( string )buffer;
@@ -31,6 +32,6 @@ private string allCaps( string pass ) {
 
 private string identity( string pass ) { return pass; }
 
-auto variationsOf( in ref Config config ) {
-  return Variations( [ &capitalFirst, &allCaps ] );
+auto variationsFor( in ref Config config ) {
+  return Variations( [ &identity, &capFirst, &allCaps ] );
 }

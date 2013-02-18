@@ -7,10 +7,15 @@ import config;
 import std.range;
 import std.conv;
 
+/**
+  Range generating permutations using predefined tokens. The number of permutations generating a given result
+  is bounded by a minimum and a maximum (both inclusive). At each state, the range provides a range of tokens
+  corresponding to a permutation.
+*/
 struct Permutations( Range ) {
   private Range _source;
-  private typeof( Config.minCombinations ) _current;
-  private typeof( Config.maxCombinations ) _max;
+  private NoPerms _current;
+  private NoPerms _max;
   private Range[] _ranges;
   private string[] _buffer;
   
@@ -64,18 +69,18 @@ struct Permutations( Range ) {
 
 
 auto permutationsFor( Range )( in ref Config cfg, Range input ) if( isForwardRange!( Range ) ) {
-  return Permutations!Range( input, cfg.minCombinations, cfg.maxCombinations );
+  return Permutations!Range( input, cfg.minPermutations, cfg.maxPermutations );
 }
 
 unittest {
   auto words = [ "a", "b", "c", "d" ];
   Config cfg;
-  cfg.minCombinations = 2;
-  cfg.maxCombinations = 1;
+  cfg.minPermutations = 2;
+  cfg.maxPermutations = 2;
   
   import std.algorithm;
   import std.stdio;
-  auto perms = combinationsFor( cfg, words[] );
+  auto perms = permutationsFor( cfg, words[] );
   auto mapped = map!"std.algorithm.joiner( a )"( perms );
   //assert( equal( words[], mapped ) ); //TODO: post enhancement request for this.
   writeln( mapped );

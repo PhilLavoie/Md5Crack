@@ -3,6 +3,7 @@ module md5crack;
 import config;
 import md5hash;
 import variations;
+import permutations;
 
 import std.stdio;
 import std.conv;
@@ -71,22 +72,13 @@ void main( string[] args ) {
     auto dict = new string[ noPass ];
     copy( dictTmp[], dict );
     
-    string[ Md5Hash ] dictCache;
-    foreach( entry; dict[] ) {
-      dictCache[ Md5Hash( md5Of( entry ) ) ] = entry;
-    }
     
     HASH: foreach( hash; hashes[] ) {
       writeln( "Craking hash: ", hash );
       
-      if( hash in dictCache ) {
-        writeln( "found: ", dictCache[ hash ] );
-        continue;
-      }
-
-      foreach( variation; variationsOf( cfg ) ) {
+      foreach( variation; variationsFor( cfg ) ) {
         auto variated = dict.map!( variation );
-        foreach( entry; variated ) {
+        foreach( entry; variated ) {       
           auto entryHash = Md5Hash( md5Of( entry ) );
           if( entryHash == hash ) {
             writeln( "found: ", entry );
@@ -99,6 +91,7 @@ void main( string[] args ) {
     writeln( t.msg );
   }
 }
+
 
 /**
   Load hashes from a file. Every hash should be separated by a new line. Outputs the result in

@@ -14,6 +14,8 @@ import std.conv;
 struct Md5Hash {
   ubyte[ 16 ] _hash;
   
+  this( ubyte[ 16 ] hash ) { _hash = hash; }
+  
   string toString() const {
     char[ 32 ] result;
     size_t i = 0;

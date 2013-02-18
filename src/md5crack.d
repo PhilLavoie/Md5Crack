@@ -2,7 +2,7 @@ module md5crack;
 
 import config;
 import md5hash;
-
+import variations;
 
 import std.stdio;
 import std.conv;
@@ -71,15 +71,28 @@ void main( string[] args ) {
     auto dict = new string[ noPass ];
     copy( dictTmp[], dict );
     
-    foreach( hash; hashes[] ) {
+    string[ Md5Hash ] dictCache;
+    foreach( entry; dict[] ) {
+      dictCache[ Md5Hash( md5Of( entry ) ) ] = entry;
+    }
+    
+    HASH: foreach( hash; hashes[] ) {
+      writeln( "Craking hash: ", hash );
       
-      foreach( entry; dict[] ) {
-        auto wordHash = md5Of( entry );
-                
-        if( wordHash == hash ) {
-          writeln( "found: ", entry );
-          break;
-        }
+      if( hash in dictCache ) {
+        writeln( "found: ", dictCache[ hash ] );
+        continue;
+      }
+
+      foreach( variation; variationsOf( cfg ) ) {
+        auto variated = dict.map!( variation );
+        foreach( entry; variated ) {
+          auto entryHash = Md5Hash( md5Of( entry ) );
+          if( entryHash == hash ) {
+            writeln( "found: ", entry );
+            continue HASH;
+          }
+        }        
       }
     }       
   } catch( Throwable t ) {
@@ -87,6 +100,10 @@ void main( string[] args ) {
   }
 }
 
+/**
+  Load hashes from a file. Every hash should be separated by a new line. Outputs the result in
+  the provided output. Returns the number of hashes read.
+*/
 size_t loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash ) ) {
   size_t noHashes = 0;
   //For each line, parse the hash and add it to the structure.
@@ -104,7 +121,7 @@ size_t loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Ha
 /**
   Read the words out of a dictionary file. All pass phrases are delimited using new lines. Everything
   starting from the first character of a line up to its end is considered a pass phrase (includes potential
-  white spaces). Returns the pass phrases read.
+  white spaces). Returns the number of pass phrases read.
 */
 size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, string ) ) {
   size_t noPass = 0;
@@ -119,77 +136,3 @@ size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, s
   
   return noPass;
 }
-
-/*
-
-const size_t MAX_LENGTH = 512;
-struct Candidates {
-  ubyte[] _data;
-  
-  static const ubyte FIRST = '0';
-  static const ubyte LAST = 'z';
-  
-  this( size_t length ) {
-    _data = new ubyte[ length ];
-    for( size_t i = 0; i < length; ++i ) {
-      _data[ i ] = FIRST;
-    }    
-  }
-  
-  bool empty() {
-    foreach( dataByte; _data ) {
-      if( dataByte != LAST ) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  ubyte[] front() {
-    return _data;
-  }
-  
-  void popFront() {
-    increment( 0 );
-  }
-  
-  void increment( size_t index ) {
-    switch( _data[ index ] ) {
-      case '9':
-        _data[ index ] = 'A';
-        break;
-      case 'Z':
-        _data[ index ] = 'a';
-        break;
-      case 'z':
-        increment( index + 1 );
-        _data[ index ] = '0';
-        break;
-      default:    
-        ++_data[ index ];
-    }    
-  }
-}
-
-string bruteForce( in ubyte[ 16 ] hash ) {
-  for( size_t length = 1; length < MAX_LENGTH; ++length ) {
-    writeln( "Processing candidates of length: ", length );
-    foreach( candidate; Candidates( length ) ) {
-      //do the md5 and check for equality.
-      auto currentHash = md5Of( candidate );
-      
-      debug {
-        if( equal( candidate, cast( ubyte[] )"caca" )  ) {
-          writeln( "Hash for \"caca\": ", currentHash );
-        }
-      }
-      
-      if( equal( hash[], currentHash[] ) ) {
-        return cast( string )( candidate );
-      }
-    }
-  }
-  
-  return null;
-}
-*/

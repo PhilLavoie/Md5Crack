@@ -13,8 +13,8 @@ alias NoPerms = size_t;
 struct Config {
   File wordsFile;
   File hashesFile;
-  bool plain = false;
-  bool camelCase = false;
+  bool plain = true;
+  bool capFirst = false;
   NoPerms minPermutations = 1;
   NoPerms maxPermutations = 1;
   
@@ -26,8 +26,9 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   assert( 0 < cmdArgs.length, "expected at least the command line call" );
 } body {
   Parser parser;  
-  parser.trigger( "--plain", "Use dictionary as is.", cfg.plain );
-  parser.trigger( "--camel-case", "Capitalize first lettre of pass phrases. If pass phrases are concatenated, then every first lettre of every pass phrase is capitalized.", cfg.camelCase );
+  //TODO: check if it is really necessary to have that functionality.
+  //parser.trigger( "--plain", "Use dictionary as is.", cfg.plain );
+  parser.trigger( "--cap-first", "Capitalize first letter of tokens.", cfg.capFirst );
   parser.bounded( "--perms-min", "Minimum pass phrase permutations.", cfg.minPermutations, cast( NoPerms )0, NoPerms.max );
   parser.bounded( "--perms-max", "Maximum pass phrase permutations.", cfg.maxPermutations, cast( NoPerms )0, NoPerms.max );
   

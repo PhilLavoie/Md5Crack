@@ -3,7 +3,6 @@ module md5crack;
 import config;
 import md5hash;
 import variations;
-import permutations;
 
 import std.stdio;
 import std.conv;
@@ -72,20 +71,26 @@ void main( string[] args ) {
     auto dict = new string[ noPass ];
     copy( dictTmp[], dict );
     
-    
     HASH: foreach( hash; hashes[] ) {
       writeln( "Craking hash: ", hash );
-      
-      foreach( variation; variationsFor( cfg ) ) {
-        auto variated = dict.map!( variation );
-        foreach( entry; variated ) {       
-          auto entryHash = Md5Hash( md5Of( entry ) );
-          if( entryHash == hash ) {
-            writeln( "found: ", entry );
-            continue HASH;
-          }
-        }        
+           
+      foreach( variation; variationsFor( cfg, dict[] ) ) {
+        string joined = "";
+        foreach( token; variation.joiner ) {
+          joined ~= token;
+        }
+        
+        debug{
+          writeln( "doing variation: ", joined );
+        }
+        
+        auto permHash = md5Of( joined );
+        if( permHash == hash ) {
+          writeln( "Found: ", joined );
+          continue HASH;
+        }                
       }
+      writeln( "Not found" );
     }       
   } catch( Throwable t ) {
     writeln( t.msg );
@@ -120,9 +125,9 @@ size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, s
   size_t noPass = 0;
   
   //For each line, copy the buffer into a string and add it
-  //to the dictionary. Every word is entered in lowercase.
+  //to the dictionary.
   foreach( buffer; file.byLine ) {
-    string passphrase = buffer.idup.toLower();    
+    string passphrase = buffer.idup;    
     output.put( passphrase );
     ++noPass;
   }  

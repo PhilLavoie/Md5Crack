@@ -59,20 +59,7 @@ void main( string[] args ) {
 
   try {
     cfg.parse( args );
-    
-    Md5Hash[] hashes;
-    if( cfg.useHashesFile ) {
-      DList!Md5Hash hashesTmp;
-      auto noHashes = loadHashes( cfg.hashesFile, backInserter( &hashesTmp ) );      
-      cfg.hashesFile.close();
-      hashes = new Md5Hash[ noHashes ];
-      copy( hashesTmp[], hashes );
-    } else if( cfg.inlineHash ) {
-      hashes = new Md5Hash[ 1 ];
-      hashes[ 0 ] = cfg.hash;
-    }
-    assert( hashes !is null && 0 < hashes.length, "error constructing hashes list" );
-    
+        
     string[] dict; //Dictionary.
     if( cfg.useDictionary() ) {
       DList!string dictTmp;
@@ -86,27 +73,51 @@ void main( string[] args ) {
     } 
     assert( dict !is null && 0 < dict.length, "error constructing the dictionary" );
     
-    HASH: foreach( hash; hashes[] ) {
-      writeln( "Craking hash: ", hash );
-           
-      foreach( variation; variationsFor( cfg, dict[] ) ) {
-        string joined = "";
-        foreach( token; variation.joiner ) {
-          joined ~= token;
-        }
-        
-        debug{
-          writeln( "doing variation: ", joined );
-        }
-        
-        auto permHash = md5Of( joined );
-        if( permHash == hash ) {
-          writeln( "Found: ", joined );
-          continue HASH;
-        }                
+    if( cfg.crackHashes ) {
+      Md5Hash[] hashes;
+      if( cfg.useHashesFile ) {
+        DList!Md5Hash hashesTmp;
+        auto noHashes = loadHashes( cfg.hashesFile, backInserter( &hashesTmp ) );      
+        cfg.hashesFile.close();
+        hashes = new Md5Hash[ noHashes ];
+        copy( hashesTmp[], hashes );
+      } else if( cfg.inlineHash ) {
+        hashes = new Md5Hash[ 1 ];
+        hashes[ 0 ] = cfg.hash;
       }
-      writeln( "Not found" );
-    }       
+      assert( hashes !is null && 0 < hashes.length, "error constructing hashes list" );
+      
+      HASH: foreach( hash; hashes[] ) {
+        writeln( "Craking hash: ", hash );
+             
+        foreach( variation; variationsFor( cfg, dict[] ) ) {
+          string joined = "";
+          foreach( token; variation.joiner ) {
+            joined ~= token;
+          }
+          
+          debug{
+            writeln( "doing variation: ", joined );
+          }
+          
+          auto permHash = md5Of( joined );
+          if( permHash == hash ) {
+            writeln( "Found: ", joined );
+            continue HASH;
+          }                
+        }
+        writeln( "Not found" );
+      } 
+
+    } 
+    
+    if( cfg.generateDictionary ) {
+      foreach( variation; variationsFor( cfg, dict[] ) ) {
+        cfg.dictionaryOut.writeln( variation.joiner );       
+      }    
+    }
+    
+    
   } catch( Exception e ) {
     writeln( e.msg );
   }

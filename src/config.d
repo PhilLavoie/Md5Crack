@@ -8,6 +8,7 @@ import std.conv;
 import std.exception;
 import std.container;
 import std.algorithm;
+import std.file;
 
 //Type of the integer determining the size of the number of permutations.
 alias NoPerms = size_t;
@@ -23,9 +24,12 @@ struct Config {
   string tryString;
   bool inlineHash = false;
   Md5Hash hash;
+  File dictionaryOut;
   
   @property bool useDictionary() { return wordsFile.isOpen(); }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
+  @property bool generateDictionary() { return dictionaryOut.isOpen(); }
+  @property bool crackHashes() { return !generateDictionary; }
 }
 
 void parse( ref Config cfg, string[] cmdArgs ) in {
@@ -50,6 +54,8 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   
   parser.file( "-d", "Dictionary file.", cfg.wordsFile, "r" );
   parser.file( "-hf", "File containing hashes to be cracked.", cfg.hashesFile, "r" );
+  parser.file( "--generate", "Generate a dictionary file of variations instead of trying to crack hashes.", cfg.dictionaryOut, "w" );
+  
   
   
   parser.custom(
@@ -93,9 +99,15 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   
   //The user must provide at least one way to crack a hash.
   enforce( cfg.wordsFile.isOpen() != cfg.tryOnly, "expected only one cracking method to be provided: dictionary or provided string" );
-  //Must provide at least one hash.
-  enforce( cfg.useHashesFile != cfg.inlineHash, "expected only one way of providing hashes: through a file or inline" );  
+
+  if( cfg.generateDictionary ) {
+    enforce( !cfg.useHashesFile && !cfg.inlineHash, "expected to either generate a dictionary or crack hashes, not both" );
+    enforce( cfg.useDictionary, "expected a dictionary as a base for the generation of a new one" );
+  } else {
+    //Must provide at least one hash.
+    enforce( cfg.useHashesFile != cfg.inlineHash, "expected only one way of providing hashes: through a file or inline" );  
+  }
   //Check for minimum and maximum permutations validity.
-  enforce( cfg.minPermutations <= cfg.maxPermutations, "combinations minimum is set to " ~ cfg.minPermutations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxPermutations.to!string );  
+  enforce( cfg.minPermutations <= cfg.maxPermutations, "permutations minimum is set to " ~ cfg.minPermutations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxPermutations.to!string );  
 }
 

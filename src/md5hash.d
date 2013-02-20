@@ -14,21 +14,44 @@ import std.conv;
 struct Md5Hash {
   ubyte[ 16 ] _hash;
   
+  /**
+    Convenience constructor.
+  */
   this( ubyte[ 16 ] hash ) { _hash = hash; }
   
-  string toString() const {
+  /**
+    Returns the hexadecimal string representation of this hash.
+    No "0x" is prepended and therefore the result is always 32 characters.
+  */
+  string toString() const out( result ) {
+    assert( result.length == 32 );
+  } body {
     char[ 32 ] result;
-    size_t i = 0;
+    size_t i = 0;       //Result index. 
+    
+    //For each byte of the hash, there will be two hexadecimal characters.    
     foreach( hashByte; _hash ) {
+      //The first char represents the higher order. We shift its bits right
+      //so that the conversion function returns a meaningful value.
+      //Note that this is an unsigned shift (0 filling on the left).
       result[ i ] = toHexa( hashByte >>> 4 );
       ++i;
+      
+      //The second character represents the lower order. A mask will do fine.
       result[ i ] = toHexa( hashByte & 0x0f );
       ++i;
     }
+    
+    //Make an immutable copy (string) of the buffer. The copy is garbage collected.
     return result.idup;
   }
   
+  /**
+    Bitwise comparison of hash.
+    Returns true only if both hashes hold exactly the same value.
+  */
   bool opEquals( ref in typeof( this ) rhs ) const {
+    //Static array comparison is a value comparison, not a pointer comparison.
     return _hash == rhs._hash;
   }  
   bool opEquals( ref in ubyte[ 16 ] rhs ) const {
@@ -37,7 +60,8 @@ struct Md5Hash {
   
   /**
     Returns the hash corresponding to the hexadecimal
-    string provided.
+    string provided. No "0x" is expected to be prepended. 
+    The result is lowercase.
   */
   static typeof( this ) fromHexa( string hexa ) in {
     assert( hexa.length == 32, "expected a hash string of 32 hexadecimal symbols (16 bytes) but got: " ~ hexa );
@@ -60,8 +84,15 @@ struct Md5Hash {
 
 }
 
+unittest {
+  Md5Hash hash = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ];
+  assert( hash.toString() == "000102030405060708090a0b0c0d0e0f" );
+  assert( Md5Hash.fromHexa( hash.toString() ) == hash );
+
+}
+
 /**
-  Returns the corresponding hexadecimal symbol.
+  Returns the corresponding hexadecimal symbol. The result is lowercase.
 */
 char toHexa( ubyte b ) in {
   assert( b <= 0xf, "value " ~ b.to!string ~ " out of bounds, maximum is 0x0f" );

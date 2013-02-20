@@ -15,6 +15,8 @@ struct Variations( PermsType, Range ) {
   private Range _source;
   private Range[] _ranges;
   
+  private string[] _buffer;
+  
   private this( PermsType perms, Range source ) {
     _perms = perms;
     _source = source;
@@ -48,11 +50,11 @@ private string capFirst( string s ) {
 }
 
 auto variationsFor( WordRange )( in ref Config config, WordRange dictionary ) {
-  
+  Transform[] transforms;
   
   alias PermsType = typeof( permutationsFor( config, dictionary ) );
   
-  return Variations!PermsType( permutationsFor( config, dictionary ) );
+  return Variations!( PermsType, typeof( transforms ) )( permutationsFor( config, dictionary ), transforms );
 }
 
 

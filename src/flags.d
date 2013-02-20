@@ -76,9 +76,9 @@ public:
         enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag " ~ name );
         T temp = to!T( tokens[ 0 ] );
         if( temp < min ) {
-          throw new Exception( "Parsed value is under minimum boundary " ~ to!string( min ) );
+          throw new Exception( "Parsed value for flag " ~ name ~ " is under minimum boundary: " ~ to!string( min ) );
         } else if( max < temp ) {
-          throw new Exception( "Parsed value is above maximum boundary " ~ to!string( max ) );
+          throw new Exception( "Parsed value for flag " ~ name ~ " is above maximum boundary: " ~ to!string( max ) );
         }
         value = temp;
         return cast( size_t )1;
@@ -151,6 +151,7 @@ public:
   void printHelp( string usage ) {
     writeln( "USAGE: ", usage );
     writeln( "FLAGS:" );
+    
     foreach( string name, Flag flag; _flags ) {
       writeln( name, ": ", flag.description );
     }

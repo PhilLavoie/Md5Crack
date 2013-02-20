@@ -59,17 +59,32 @@ void main( string[] args ) {
 
   try {
     cfg.parse( args );
-    DList!Md5Hash hashesTmp;
-    auto noHashes = loadHashes( cfg.hashesFile, backInserter( &hashesTmp ) );      
-    cfg.hashesFile.close();
-    auto hashes = new Md5Hash[ noHashes ];
-    copy( hashesTmp[], hashes );
     
-    DList!string dictTmp;
-    auto noPass = loadDictionary( cfg.wordsFile, backInserter( &dictTmp ) );
-    cfg.wordsFile.close();
-    auto dict = new string[ noPass ];
-    copy( dictTmp[], dict );
+    Md5Hash[] hashes;
+    if( cfg.useHashesFile ) {
+      DList!Md5Hash hashesTmp;
+      auto noHashes = loadHashes( cfg.hashesFile, backInserter( &hashesTmp ) );      
+      cfg.hashesFile.close();
+      hashes = new Md5Hash[ noHashes ];
+      copy( hashesTmp[], hashes );
+    } else if( cfg.inlineHash ) {
+      hashes = new Md5Hash[ 1 ];
+      hashes[ 0 ] = cfg.hash;
+    }
+    assert( hashes !is null && 0 < hashes.length, "error constructing hashes list" );
+    
+    string[] dict; //Dictionary.
+    if( cfg.useDictionary() ) {
+      DList!string dictTmp;
+      auto noPass = loadDictionary( cfg.wordsFile, backInserter( &dictTmp ) );
+      cfg.wordsFile.close();
+      dict = new string[ noPass ];
+      copy( dictTmp[], dict );
+    } else if( cfg.tryOnly ) {
+      dict = new string[ 1 ];
+      dict[ 0 ] = cfg.tryString;
+    } 
+    assert( dict !is null && 0 < dict.length, "error constructing the dictionary" );
     
     HASH: foreach( hash; hashes[] ) {
       writeln( "Craking hash: ", hash );
@@ -92,8 +107,8 @@ void main( string[] args ) {
       }
       writeln( "Not found" );
     }       
-  } catch( Throwable t ) {
-    writeln( t.msg );
+  } catch( Exception e ) {
+    writeln( e.msg );
   }
 }
 

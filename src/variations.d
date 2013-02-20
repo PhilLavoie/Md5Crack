@@ -1,24 +1,35 @@
 module variations;
 
 import config;
-import permutations;
 
+import std.algorithm;
+import std.range;
+import std.conv;
 import std.ascii;
-import std.string;
 
 //TODO: review this to incorporate support for multiple string transforms.
 alias Transform = string function( string[] );
 
-struct Variations( PermsType ) {
+struct Variations( PermsType, Range ) {
   private PermsType _perms;
+  private Range _source;
+  private Range[] _ranges;
   
-  private this( PermsType perms ) {
+  private this( PermsType perms, Range source ) {
     _perms = perms;
+    _source = source;
+    _ranges = new Range[ _perms._max ];
+    
+    //Initialize the per token transforms.
+    for( NoPerms i = 0; i < perms._max; ++i ) {
+      _ranges[ i ] = source.save();
+    }
   }
   
   //Forward range primitives.
   @property string[] front() {
-    return _perms.front();
+    _buffer = _perms.front();
+    return cast( string[] )_buffer;
   }
   @property bool empty() {
     return _perms.empty();
@@ -30,7 +41,15 @@ struct Variations( PermsType ) {
   
 }
 
-auto variationsFor( Range )( in ref Config config, Range dictionary ) {
+private string capFirst( string s ) {
+  char[] result = s.dup;
+  result[ 0 ] = cast( char )( result[ 0 ].toUpper() );
+  return cast( string )result;
+}
+
+auto variationsFor( WordRange )( in ref Config config, WordRange dictionary ) {
+  
+  
   alias PermsType = typeof( permutationsFor( config, dictionary ) );
   
   return Variations!PermsType( permutationsFor( config, dictionary ) );
@@ -66,9 +85,7 @@ private struct Permutations( Range ) {
   }
   
   @property string[] front() { 
-    for( typeof( _current ) i = 0; i < _current; ++i ) {
-      _buffer[ i ] = _ranges[ i ].front();
-    }
+    copyBuffer();
     return _buffer[ 0 .. _current ];
   }
   @property bool empty() {
@@ -77,11 +94,12 @@ private struct Permutations( Range ) {
   void popFront() {
     increment( _current - 1 );
   }
+  auto save() { return this; }
   
   /**
     From last to first.
   */
-  void increment( typeof( _max ) index ) in {
+  private void increment( typeof( _max ) index ) in {
     assert( index < _current, "expected index: " ~ index.to!string ~ " to be lower than: " ~ _current.to!string );
   } body {
     _ranges[ index ].popFront();
@@ -93,6 +111,12 @@ private struct Permutations( Range ) {
         increment( index - 1 );
       }
     }    
+  }
+  
+  private void copyBuffer() {
+    for( typeof( _current ) i = 0; i < _current; ++i ) {
+      _buffer[ i ] = _ranges[ i ].front();
+    }
   }
 
 }

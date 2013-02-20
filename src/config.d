@@ -10,6 +10,9 @@ import std.container;
 
 alias NoPerms = size_t;
 
+//TODO: add the possibility to generate a dictionary from another one.
+//TODO: add the possibility to time everything.
+
 struct Config {
   File wordsFile;
   File hashesFile;
@@ -32,7 +35,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   parser.bounded( "--perms-min", "Minimum pass phrase permutations.", cfg.minPermutations, cast( NoPerms )0, NoPerms.max );
   parser.bounded( "--perms-max", "Maximum pass phrase permutations.", cfg.maxPermutations, cast( NoPerms )0, NoPerms.max );
   
-  parser.file( "-w", "Words dictionary file.", cfg.wordsFile, "r" );
+  parser.file( "-d", "Dictionary file.", cfg.wordsFile, "r" );
   parser.file( "-hf", "File containing hashes to be cracked", cfg.hashesFile, "r" );
   
     

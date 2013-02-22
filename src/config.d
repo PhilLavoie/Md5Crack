@@ -128,6 +128,11 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     //Must provide at least one hash.
     enforce( cfg.useHashesFile != cfg.inlineHash, "expected only one way of providing hashes: through a file or inline" );  
   }
+  
+  if( cfg.useDictionaries ) {
+    cfg.minPermutations = max( cfg.minPermutations, cfg.dictionaries.length );
+    cfg.maxPermutations = max( cfg.maxPermutations, cfg.dictionaries.length );
+  }
   //Check for minimum and maximum permutations validity.
   enforce( cfg.minPermutations <= cfg.maxPermutations, "permutations minimum is set to " ~ cfg.minPermutations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxPermutations.to!string );  
 }

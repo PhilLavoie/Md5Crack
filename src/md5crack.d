@@ -54,6 +54,8 @@ auto backInserter( T )( T structure ) {
   return BackInserter!T( structure );
 }
 
+alias Dictionary = string[];
+
 void main( string[] args ) {
   Config cfg;
 
@@ -64,7 +66,7 @@ void main( string[] args ) {
     
     //In order to avoid loading twice the same dictionary, we stored the loaded
     //words in a dictionary associating it with its filename.
-    string[][ string ] dictionariesByFilenames;
+    Dictionary[ string ] dictionariesByFilenames;
     
     if( cfg.useDictionaries ) {
       
@@ -75,7 +77,7 @@ void main( string[] args ) {
         }
         
         DList!string dictTmp;
-        auto noPass = loadDictionary( cfg.dictionaries[ 0 ], backInserter( &dictTmp ) );
+        auto noPass = loadDictionary( d, backInserter( &dictTmp ) );
         //Add it in the dictionary.
         dictionariesByFilenames[ d.name ] = new string[ noPass ];
         //Copy the loaded pass phrases into the array.
@@ -85,6 +87,7 @@ void main( string[] args ) {
         
         debug {
           writeln( "loaded dictionary: ", d.name );
+          writeln( "number of dictionary entries: ", noPass );
         }
         
       }      
@@ -95,6 +98,10 @@ void main( string[] args ) {
     } 
     assert( dictionariesByFilenames !is null && 0 < dictionariesByFilenames.length, "error constructing the dictionaries" );
     
+    Dictionary[] dictionaries = new Dictionary[ cfg.dictionaries.length ];
+    for( size_t i = 0; i < dictionaries.length; ++i ) {
+      dictionaries[ i ] = dictionariesByFilenames[ cfg.dictionaries[ i ].name ];
+    }
     
     if( cfg.crackHashes ) {
       Md5Hash[] hashes;
@@ -113,7 +120,7 @@ void main( string[] args ) {
       HASH: foreach( hash; hashes[] ) {
         writeln( "Craking hash: ", hash );
              
-        foreach( variation; variationsFor( cfg, dictionariesByFilenames[ cfg.dictionaries[ 0 ].name ][] ) ) {
+        foreach( variation; variationsFor( cfg, dictionaries ) ) {
           string joined = "";
           foreach( token; variation.joiner ) {
             joined ~= token;
@@ -135,7 +142,7 @@ void main( string[] args ) {
     } 
     
     if( cfg.generateDictionary ) {
-      foreach( variation; variationsFor( cfg, dictionariesByFilenames[ cfg.dictionaries[ 0 ].name ] ) ) {
+      foreach( variation; variationsFor( cfg, dictionaries ) ) {
         cfg.dictionaryOut.writeln( variation.joiner );       
       }    
     }
@@ -176,7 +183,7 @@ size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, s
   //For each line, copy the buffer into a string and add it
   //to the dictionary.
   foreach( buffer; file.byLine ) {
-    string passphrase = buffer.idup;    
+    string passphrase = buffer.idup;  //Make an immutable copy, a.k.a. a string.
     output.put( passphrase );
     ++noPass;
   }  

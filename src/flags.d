@@ -8,16 +8,23 @@ import std.stdio;
 //For brevity.
 alias size_t delegate( string[] ) TokensParser;
 
+/**
+  Exception specific to flags expecting arguments.
+  If the expected count is lower than what is actually provided on the command line,
+  then this exception should be thrown.
+*/
 class MissingArgumentsException: Exception {
-
   this( string flag, size_t noArgs ) in {
     assert( 0 < noArgs, "a missing argument exception requires that at least 1 argument is missing, not: " ~ noArgs.to!string );
   } body {
     super( "expected " ~ noArgs.to!string ~ " argument" ~ ( 1 == noArgs ? "" : "s" ) ~ " for flag " ~ flag );
   }  
-
 }
 
+/**
+  Checks that the tokens provided hold enough arguments for the flag.
+  Throws a standard exception otherwise (with a standard error message).
+*/
 void enforceNoArgs( string[] tokens, string flag, size_t noArgs ) {
   enforce( tokens !is null && noArgs <= tokens.length, new MissingArgumentsException( flag, noArgs ) );
 }

@@ -17,7 +17,8 @@ enum Variation {
   camelCase,
   invertedCamelCase,
   toUpper,
-  toLower
+  toLower,
+  reverse
 }
 
 struct Config {
@@ -147,6 +148,15 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "All lowercase variation.",
     ( string[] tokens ) {
       varTmp.insertBack( Variation.toLower );
+      return cast( size_t )0;
+    }  
+  );
+  
+  parser.custom(
+    "--reverse",
+    "Reverse variation.",
+    ( string[] tokens ) {
+      varTmp.insertBack( Variation.reverse );
       return cast( size_t )0;
     }  
   );

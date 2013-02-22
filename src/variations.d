@@ -35,6 +35,14 @@ string invertedCamelCase( string token ) {
   return cast( string )result;
 }
 
+string reverse( string token ) {
+  char[] result = new char[ token.length ];
+  for( size_t i = 0; i < token.length; ++i ) {
+    result[ i ] = token[ $ - 1 - i ];
+  }
+  return cast( string )result;
+}
+
 
 struct Variations( PermsType, Range ) {
   private PermsType _perms;
@@ -79,6 +87,8 @@ VariationFunction correspondingFunction( Variation var ) {
     return &std.string.toUpper!string;
   case Variation.toLower:
     return &std.string.toLower!string;
+  case Variation.reverse:
+    return &reverse;
   }
 }
 

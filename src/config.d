@@ -29,7 +29,7 @@ struct Config {
   @property bool useDictionaries() { return dictionaries.length != 0; }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
   @property bool generateDictionary() { return dictionaryOut.isOpen(); }
-  @property bool crackHashes() { return !generateDictionary; }
+  @property bool crackHashes() { return useHashesFile || inlineHash; }
 }
 
 void parse( ref Config cfg, string[] cmdArgs ) in {
@@ -122,7 +122,6 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   enforce( cfg.useDictionaries != cfg.tryOnly, "expected only one cracking method to be provided: dictionary or provided string" );
 
   if( cfg.generateDictionary ) {
-    enforce( !cfg.useHashesFile && !cfg.inlineHash, "expected to either generate a dictionary or crack hashes, not both" );
     enforce( cfg.useDictionaries, "expected a dictionary as a base for the generation of a new one" );
   } else {
     //Must provide at least one hash.

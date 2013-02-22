@@ -14,7 +14,7 @@ import std.file;
 alias NoPerms = size_t;
 
 struct Config {
-  File wordsFile;
+  File[] dictionaries;
   File hashesFile;
   bool plain = true;
   bool capFirst = false;
@@ -26,7 +26,7 @@ struct Config {
   Md5Hash hash;
   File dictionaryOut;
   
-  @property bool useDictionary() { return wordsFile.isOpen(); }
+  @property bool useDictionaries() { return dictionaries.length != 0; }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
   @property bool generateDictionary() { return dictionaryOut.isOpen(); }
   @property bool crackHashes() { return !generateDictionary; }
@@ -39,24 +39,45 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   parser.trigger( "--cap-first", "Capitalize first letter of tokens.", cfg.capFirst );
   parser.bounded( 
     "--perms-min",
-    "Minimum pass phrase permutations (inclusive). Default is " ~ cfg.minPermutations.to!string ~ ".",
+    "Minimum pass phrase permutations (inclusive). Default is the number of dictionaries.",
     cfg.minPermutations,
     cast( NoPerms )1,
     NoPerms.max 
   );
   parser.bounded( 
     "--perms-max", 
-    "Maximum pass phrase permutations (inclusive). Default is " ~ cfg.maxPermutations.to!string ~ ".", 
+    "Maximum pass phrase permutations (inclusive). Default is the number of dictionaries.", 
     cfg.maxPermutations, 
     cast( NoPerms )1, 
     NoPerms.max 
   );
   
-  parser.file( "-d", "Dictionary file.", cfg.wordsFile, "r" );
   parser.file( "-hf", "File containing hashes to be cracked.", cfg.hashesFile, "r" );
   parser.file( "--generate", "Generate a dictionary file of variations instead of trying to crack hashes.", cfg.dictionaryOut, "w" );
   
-  
+  parser.custom(
+    "--dict",
+    "Colon separated list of of files. Enclose in quotations to make sure the shell passes it as one argument. "
+    "The order of the dictionaries is important. The first dictionary will define the set of words that can be "
+    "in the first position. The following dictionary defines the set of words that can be in the second definition "
+    "and so on.",
+    ( string[] tokens ) {
+      enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag --dict" );
+      
+      //Colon separated list of values. Since the splitter algorithm
+      //returns empty strings between splitted words, we will have to
+      //ignore those.
+      auto fileCandidates = tokens[ 0 ].splitter( ":" ).filter!"( a !is null && 0 < a.length )";
+      //Create the container holding the files.
+      size_t noFiles = count( fileCandidates );
+      cfg.dictionaries = new File[ noFiles ];
+      //Open the files.
+      auto files = fileCandidates.map!"std.stdio.File( a, \"r\" )";
+      copy( files, cfg.dictionaries );      
+      
+      return cast( size_t )1;
+    }  
+  );
   
   parser.custom(
     "--try",
@@ -90,7 +111,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   
   if( help ) { 
     writeln(); //Print new line.
-    parser.printHelp( "md5crack -d <dictionary> [ options ]" ); //Show help given the usage string.
+    parser.printHelp( "md5crack [ options ]" ); //Show help given the usage string.
     throw new Exception( "" ); //Just to fail execution.
   }
   
@@ -98,11 +119,11 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   enforce( args is null || args.length == 0, "unexpected arguments: " ~ to!string( args ) );
   
   //The user must provide at least one way to crack a hash.
-  enforce( cfg.wordsFile.isOpen() != cfg.tryOnly, "expected only one cracking method to be provided: dictionary or provided string" );
+  enforce( cfg.useDictionaries != cfg.tryOnly, "expected only one cracking method to be provided: dictionary or provided string" );
 
   if( cfg.generateDictionary ) {
     enforce( !cfg.useHashesFile && !cfg.inlineHash, "expected to either generate a dictionary or crack hashes, not both" );
-    enforce( cfg.useDictionary, "expected a dictionary as a base for the generation of a new one" );
+    enforce( cfg.useDictionaries, "expected a dictionary as a base for the generation of a new one" );
   } else {
     //Must provide at least one hash.
     enforce( cfg.useHashesFile != cfg.inlineHash, "expected only one way of providing hashes: through a file or inline" );  

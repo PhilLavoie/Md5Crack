@@ -57,21 +57,44 @@ auto backInserter( T )( T structure ) {
 void main( string[] args ) {
   Config cfg;
 
+  
+  //TODO move this try catch logic in config.
   try {
     cfg.parse( args );
+    
+    //In order to avoid loading twice the same dictionary, we stored the loaded
+    //words in a dictionary associating it with its filename.
+    string[][ string ] dictionariesByFilenames;
+    
+    if( cfg.useDictionaries ) {
+      
+      foreach( d; cfg.dictionaries ) {
+        //Only load the file if it has not already been loaded.
+        if( d.name in dictionariesByFilenames ) {
+          continue;
+        }
         
-    string[] dict; //Dictionary.
-    if( cfg.useDictionary() ) {
-      DList!string dictTmp;
-      auto noPass = loadDictionary( cfg.wordsFile, backInserter( &dictTmp ) );
-      cfg.wordsFile.close();
-      dict = new string[ noPass ];
-      copy( dictTmp[], dict );
+        DList!string dictTmp;
+        auto noPass = loadDictionary( cfg.dictionaries[ 0 ], backInserter( &dictTmp ) );
+        //Add it in the dictionary.
+        dictionariesByFilenames[ d.name ] = new string[ noPass ];
+        //Copy the loaded pass phrases into the array.
+        copy( dictTmp[], dictionariesByFilenames[ d.name ] );        
+        //Close dictionary.      
+        d.close();
+        
+        debug {
+          writeln( "loaded dictionary: ", d.name );
+        }
+        
+      }      
     } else if( cfg.tryOnly ) {
-      dict = new string[ 1 ];
-      dict[ 0 ] = cfg.tryString;
+      //Arbitrarily chose a file name for the try.
+      dictionariesByFilenames[ "try" ] = new string[ 1 ];
+      dictionariesByFilenames[ "try" ][ 0 ] = cfg.tryString;
     } 
-    assert( dict !is null && 0 < dict.length, "error constructing the dictionary" );
+    assert( dictionariesByFilenames !is null && 0 < dictionariesByFilenames.length, "error constructing the dictionaries" );
+    
     
     if( cfg.crackHashes ) {
       Md5Hash[] hashes;
@@ -90,7 +113,7 @@ void main( string[] args ) {
       HASH: foreach( hash; hashes[] ) {
         writeln( "Craking hash: ", hash );
              
-        foreach( variation; variationsFor( cfg, dict[] ) ) {
+        foreach( variation; variationsFor( cfg, dictionariesByFilenames[ cfg.dictionaries[ 0 ].name ][] ) ) {
           string joined = "";
           foreach( token; variation.joiner ) {
             joined ~= token;
@@ -112,7 +135,7 @@ void main( string[] args ) {
     } 
     
     if( cfg.generateDictionary ) {
-      foreach( variation; variationsFor( cfg, dict[] ) ) {
+      foreach( variation; variationsFor( cfg, dictionariesByFilenames[ cfg.dictionaries[ 0 ].name ] ) ) {
         cfg.dictionaryOut.writeln( variation.joiner );       
       }    
     }

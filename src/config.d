@@ -13,6 +13,13 @@ import std.file;
 //Type of the integer determining the size of the number of permutations.
 alias NoPerms = size_t;
 
+enum Variation {
+  camelCase,
+  invertedCamelCase,
+  toUpper,
+  toLower
+}
+
 struct Config {
   File[] dictionaries;
   File hashesFile;
@@ -25,6 +32,8 @@ struct Config {
   bool inlineHash = false;
   Md5Hash hash;
   File dictionaryOut;
+  
+  Variation[] variations;
   
   @property bool useDictionaries() { return dictionaries.length != 0; }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
@@ -62,7 +71,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "in the first position. The following dictionary defines the set of words that can be in the second definition "
     "and so on.",
     ( string[] tokens ) {
-      enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag --dict" );
+      enforceNoArgs( tokens, "--dict", 1 );
       
       //Colon separated list of values. Since the splitter algorithm
       //returns empty strings between splitted words, we will have to
@@ -83,7 +92,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--try",
     "Try only provided hash.",
     ( string[] tokens ) {
-      enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag --try" );
+      enforceNoArgs( tokens, "--try", 1 );
     
       cfg.tryString = tokens[ 0 ];
       cfg.tryOnly = true;
@@ -95,7 +104,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--hash",
     "Crack only the provided hash.",
     ( string[] tokens ) {
-      enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag --hash" );
+      enforceNoArgs( tokens, "--hash", 1 );
     
       cfg.hash = Md5Hash.fromHexa( tokens[ 0 ] );
       cfg.inlineHash = true;
@@ -103,6 +112,45 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
       return cast( size_t )1;
     }
   );
+  
+  DList!Variation varTmp;
+  
+  parser.custom(
+    "--camel-case",
+    "Camel case variation.",
+    ( string[] tokens ) {
+      varTmp.insertBack( Variation.camelCase );
+      return cast( size_t )0;
+    }
+  );
+  
+  parser.custom(
+    "--inverted-camel-case",
+    "Inverted camel case variation.",
+    ( string[] tokens ) {
+      varTmp.insertBack( Variation.invertedCamelCase );
+      return cast( size_t )0;
+    }
+  );
+  
+  parser.custom(
+    "--to-upper",
+    "All caps variation.",
+    ( string[] tokens ) {
+      varTmp.insertBack( Variation.toUpper );
+      return cast( size_t )0;
+    }  
+  );
+  
+  parser.custom(
+    "--to-lower",
+    "All lowercase variation.",
+    ( string[] tokens ) {
+      varTmp.insertBack( Variation.toLower );
+      return cast( size_t )0;
+    }  
+  );
+  
   
   bool help = false;
   parser.trigger( "-h", "Prints help menu.", help );
@@ -134,5 +182,9 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   }
   //Check for minimum and maximum permutations validity.
   enforce( cfg.minPermutations <= cfg.maxPermutations, "permutations minimum is set to " ~ cfg.minPermutations.to!string ~ " and was expected to be under the maximum: " ~ cfg.maxPermutations.to!string );  
+  
+  //Copy variations into configuration.
+  cfg.variations = new Variation[ count( varTmp[] ) ];
+  copy( varTmp[], cfg.variations );
 }
 

@@ -8,8 +8,24 @@ import std.stdio;
 //For brevity.
 alias size_t delegate( string[] ) TokensParser;
 
+class MissingArgumentsException: Exception {
+
+  this( string flag, size_t noArgs ) in {
+    assert( 0 < noArgs, "a missing argument exception requires that at least 1 argument is missing, not: " ~ noArgs.to!string );
+  } body {
+    super( "expected " ~ noArgs.to!string ~ " argument" ~ ( 1 == noArgs ? "" : "s" ) ~ " for flag " ~ flag );
+  }  
+
+}
+
+void enforceNoArgs( string[] tokens, string flag, size_t noArgs ) {
+  enforce( tokens !is null && noArgs <= tokens.length, new MissingArgumentsException( flag, noArgs ) );
+}
+
 /**
-  A flag object is a representation of a command line flag.
+  A flag object is a representation of a command line flag. It is associated with
+  an invocation, a description and a token parser that is responsible for parsing
+  expected arguments, if any.
 */
 class Flag {
 private:
@@ -61,7 +77,7 @@ public:
       name, 
       description, 
       ( string[] tokens ) { 
-        enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag " ~ name );
+        enforce( tokens !is null && 0 < tokens.length, "expected one argument for flag " ~ name );
         value = to!T( tokens[ 0 ] ); 
         return cast( size_t )1;
       } 

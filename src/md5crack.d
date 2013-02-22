@@ -153,7 +153,7 @@ void main( string[] args ) {
   }
 }
 
-
+//TODO: add support to read hashes as declared in labo 02.
 /**
   Load hashes from a file. Every hash should be separated by a new line. Outputs the result in
   the provided output. Returns the number of hashes read.

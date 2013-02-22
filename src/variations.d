@@ -6,30 +6,57 @@ import std.algorithm;
 import std.range;
 import std.conv;
 import std.ascii;
+import std.string;
 
-alias Transform = string function( string[] );
+alias VariationFunction = string function( string );
+
+//Variations: tolower, toupper, camel case, invert camel case, reverse, substitutions -> file?!?!?!?.
+//Letter permutations??? Sub only one. Caps only one...
+
+string camelCase( string token ) {
+  if( token.length == 0 ) { return token; }
+  char[] result = new char[ token.length ];
+
+  result[ 0 ] = cast( char )token[ 0 ].toUpper();
+  for( size_t i = 1; i < token.length; ++i ) {
+    result[ i ] = cast( char )token[ i ].toLower();
+  }
+  return cast( string )result;
+}
+
+string invertedCamelCase( string token ) {
+  if( token.length == 0 ) { return token; }
+  char[] result = new char[ token.length ];
+
+  result[ 0 ] = cast( char )token[ 0 ].toLower();
+  for( size_t i = 1; i < token.length; ++i ) {
+    result[ i ] = cast( char )token[ i ].toUpper();
+  }
+  return cast( string )result;
+}
+
 
 struct Variations( PermsType, Range ) {
   private PermsType _perms;
-  private Range _source;
-  private Range[] _ranges;
+  private Range _variations;
   
   private string[] _buffer;
   
-  private this( PermsType perms, Range source ) {
+  private this( PermsType perms, Range variations ) {
     _perms = perms;
-    _source = source;
-    _ranges = new Range[ _perms._max ];
-    
-    //Initialize the per token transforms.
-    for( NoPerms i = 0; i < perms._max; ++i ) {
-      _ranges[ i ] = source.save();
-    }
+    _variations = variations;
   }
   
   //Forward range primitives.
   @property string[] front() {
     _buffer = _perms.front();
+    
+    for( size_t i = 0; i < _buffer.length; ++i ) {
+      foreach( variation; _variations ) {
+        _buffer[ i ] = variation( _buffer[ i ] );
+      }
+    }
+    
     return cast( string[] )_buffer;
   }
   @property bool empty() {
@@ -42,18 +69,30 @@ struct Variations( PermsType, Range ) {
   
 }
 
-private string capFirst( string s ) {
-  char[] result = s.dup;
-  result[ 0 ] = cast( char )( result[ 0 ].toUpper() );
-  return cast( string )result;
+VariationFunction correspondingFunction( Variation var ) {
+  final switch( var ) {
+  case Variation.camelCase:
+    return &camelCase;
+  case Variation.invertedCamelCase:
+    return &invertedCamelCase;
+  case Variation.toUpper:
+    return &std.string.toUpper!string;
+  case Variation.toLower:
+    return &std.string.toLower!string;
+  }
 }
 
-auto variationsFor( RoR )( in ref Config config, RoR dictionaries ) {
-  Transform[] transforms;
+auto variationsFor( RoR )( in ref Config cfg, RoR dictionaries ) {
+  alias PermsType = typeof( permutationsFor( cfg, dictionaries ) );
   
-  alias PermsType = typeof( permutationsFor( config, dictionaries ) );
+  auto variations = new VariationFunction[ cfg.variations.length ];
+  for( size_t i = 0; i < variations.length; ++i ) {
+    variations[ i ] = cfg.variations[ i ].correspondingFunction();
+  }
   
-  return Variations!( PermsType, typeof( transforms ) )( permutationsFor( config, dictionaries ), transforms );
+  alias VarsType = typeof( variations );
+  
+  return Variations!( PermsType, VarsType )( permutationsFor( cfg, dictionaries ), variations );
 }
 
 

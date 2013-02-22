@@ -7,7 +7,6 @@ import std.range;
 import std.conv;
 import std.ascii;
 
-//TODO: review this to incorporate support for multiple string transforms.
 alias Transform = string function( string[] );
 
 struct Variations( PermsType, Range ) {
@@ -49,12 +48,12 @@ private string capFirst( string s ) {
   return cast( string )result;
 }
 
-auto variationsFor( WordRange )( in ref Config config, WordRange dictionary ) {
+auto variationsFor( RoR )( in ref Config config, RoR dictionaries ) {
   Transform[] transforms;
   
-  alias PermsType = typeof( permutationsFor( config, dictionary ) );
+  alias PermsType = typeof( permutationsFor( config, dictionaries ) );
   
-  return Variations!( PermsType, typeof( transforms ) )( permutationsFor( config, dictionary ), transforms );
+  return Variations!( PermsType, typeof( transforms ) )( permutationsFor( config, dictionaries ), transforms );
 }
 
 
@@ -64,49 +63,86 @@ auto variationsFor( WordRange )( in ref Config config, WordRange dictionary ) {
   corresponding to a permutation.
 */
 private struct Permutations( Range ) {
-  private Range _source;
+  private Range[] _sources;
   private NoPerms _current;
   private NoPerms _max;
   private Range[] _ranges;
   private string[] _buffer;
   
-  private this( Range source, typeof( _current ) min, typeof( _max ) max ) in { 
+  private this( Range[] sources, typeof( _current ) min, typeof( _max ) max ) in { 
     assert( 0 < min, "expected min: " ~ min.to!string ~ " to be above 0" );
     assert( 0 < max, "expected max: " ~ max.to!string ~ " to be above 0" );
     assert( min <= max, "expected min: " ~ min.to!string ~ " to be <= than max: " ~ max.to!string );
-    assert( !source.empty(), "expected the input source to contain at least 1 element" );
+    assert( sources !is null && 0 < sources.length, "expected at least one dictionary" );
+    foreach( range; sources ) {
+      assert( !range.empty(), "every dictionary is expected to hold at least one value" );
+    }
   } body {
-    _source = source.save(); 
+    //Store the initial state of the ranges.
+    _sources = sources;        
+    
+    //Min and maximum number of permutations.
     _current = min;
     _max = max;
-    _ranges = new Range[ max ];
+    
+    //Current permutation generators states.
+    _ranges = new Range[ max ];    
     for( typeof( max ) i = 0; i < max; ++i ) {
-      _ranges[ i ] = _source.save();
+      initializeStateOf( i );
     }    
+    
+    //Permutation buffer.
     _buffer = new string[ max ];
   }
   
+  /**
+    Returns the current permutation.
+    Note that the array returned is one managed internally. Therefore, its value will change
+    after each permutation change, meaning:
+    auto perm1 = range.front;
+    range.popFront();
+    auto perm2 = range.front;
+    if( perm1.length == perm2.length )
+      assert( equal( perm1, perm2 ) ); //The content pointed to by perm1 has changed.
+  */
   @property string[] front() { 
-    copyBuffer();
-    return _buffer[ 0 .. _current ];
+    return readPermutation();
   }
+  
+  /**
+    Returns true when no more permutation can be generated.
+  */
   @property bool empty() {
     return _max < _current;
   }
+  
+  /**
+    Generates a subsequent permutation.
+  */
   void popFront() {
     increment( _current - 1 );
   }
+  
+  /**
+    Returns a copy of this range.
+  */
   auto save() { return this; }
   
   /**
-    From last to first.
+    Increments the internal ranges state. The first call to this method should always be
+    with the last index valid. This algorithm changes the rightmost token first.
+    When the range is depleted for this token, the range is rewound to its initial state
+    and the algorithm recursively increment de range of the immediate left token.
+    
+    In the event that every valid ranges are depleted, this method increments the current
+    number of permutations.
   */
   private void increment( typeof( _max ) index ) in {
     assert( index < _current, "expected index: " ~ index.to!string ~ " to be lower than: " ~ _current.to!string );
   } body {
     _ranges[ index ].popFront();
     if( _ranges[ index ].empty() ) {
-      _ranges[ index ] = _source.save();
+      initializeStateOf( index );
       if( index == 0 ) { 
         ++_current;         
       } else {   
@@ -115,17 +151,32 @@ private struct Permutations( Range ) {
     }    
   }
   
-  private void copyBuffer() {
+  /**
+    Reads the permutation returned by the current state of the ranges and writes
+    it in the buffer. Returns the slice of the buffer that was written to.
+  */
+  private typeof( _buffer ) readPermutation() {
     for( typeof( _current ) i = 0; i < _current; ++i ) {
       _buffer[ i ] = _ranges[ i ].front();
     }
+    return _buffer[ 0 .. _current ];
   }
 
+  /**
+    Sets the indexed range to its initial state (corresponding source).
+    If there are less sources than permuations, then the sources are cyclicly
+    assigned.  
+  */
+  private void initializeStateOf( typeof( _max ) index ) in {
+    assert( index < _max, "trying to acces the initial state of an out of bounds index: " ~ index.to!string ~ " maximum value accepted: " ~ _max.to!string );
+  } body {
+    _ranges[ index ] = _sources[ index % _sources.length ].save();
+  }
 }
 
 
-private auto permutationsFor( Range )( in ref Config cfg, Range input ) if( isForwardRange!( Range ) ) {
-  return Permutations!Range( input, cfg.minPermutations, cfg.maxPermutations );
+private auto permutationsFor( Range )( in ref Config cfg, Range[] inputs ) if( isForwardRange!( Range ) && is( ElementType!Range == string ) ) {
+  return Permutations!Range( inputs, cfg.minPermutations, cfg.maxPermutations );
 }
 
 unittest {
@@ -136,8 +187,26 @@ unittest {
   
   import std.algorithm;
   import std.stdio;
-  auto perms = permutationsFor( cfg, words[] );
+  auto perms = variationsFor( cfg, [ words[] ] );
   auto mapped = map!"std.algorithm.joiner( a )"( perms );
-  //assert( equal( words[], mapped ) ); //TODO: post enhancement request for this.
   writeln( mapped );
+  
+  auto digits = [ "0", "1", "2" ];
+  perms = variationsFor( cfg, [ words, digits ] );
+  mapped = map!"std.algorithm.joiner( a )"( perms );
+  writeln( mapped );
+  
+  cfg.minPermutations = 1;
+  cfg.maxPermutations = 3;
+  
+  perms = variationsFor( cfg, [ words, digits ] );
+  mapped = map!"std.algorithm.joiner( a )"( perms );
+  writeln( mapped );  
+  
+  cfg.minPermutations = 1;
+  cfg.maxPermutations = 1;
+  
+  perms = variationsFor( cfg, [ words, digits ] );
+  mapped = map!"std.algorithm.joiner( a )"( perms );
+  writeln( mapped );  
 }

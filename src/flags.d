@@ -5,7 +5,19 @@ import std.conv;
 import std.exception;
 import std.stdio;
 
-//For brevity.
+/**
+  Type of a flag's tokens parser.
+  The tokens passed on by the command line parser start on the first
+  token following the flag. Therefore:
+  -f toto
+  Would result in the parser calling "-f"'s flag tokens parser with this
+  argument: [ "toto" ].
+  A tokens parser should throw if it was unable to convert its argument.
+  The tokens parser MUST return the number of arguments read in order
+  for the higher order parser to determine which token is to be considered
+  the next. In our preceding example, if "-f" was expecting a string argument,
+  then it should return cast( size_t )1;
+*/
 alias size_t delegate( string[] ) TokensParser;
 
 /**
@@ -39,6 +51,9 @@ private:
   string _description;
   TokensParser _parser;
 
+  /**
+    Creates a flag with the given description and tokens parser.
+  */
   this( string description, TokensParser parser ) { 
     _description = description; 
     _parser = parser;    
@@ -53,13 +68,15 @@ private:
     return _parser( tokens );
   }
 public:
-  @property auto description() { return _description; }
+  @property string description() { return _description; }
 }
 
 /**
   Command line parser.
   It provides the user with facilities to create flags and register
   them to the current parser.
+  Every factory method returns a flag, but the flag is also immediately
+  added to the parser's list.
 */
 struct Parser {
 private:
@@ -67,6 +84,11 @@ private:
  
 public:
 
+  /**
+    If no predefined flags satisfy the user's needs, this one is the most
+    general factory method. It lets the user specify the tokens parser.
+    Refer to its type declaration for more information on its signature.
+  */
   Flag custom( string name, string description, TokensParser parser ) in {
     assert( name !in _flags, "Flag names must be unique" );
   } body {
@@ -75,10 +97,19 @@ public:
     return flag;
   }
   
+  /**
+    A simple flag that sets the value passed on to true whenever it was found
+    on the command line. Note that the value held by the bool should be false
+    initially.
+  */
   Flag trigger( string name, string description, ref bool used ) {
     return custom( name, description, ( string[] tokens ) { used = true; return cast( size_t )0; } );
   } 
   
+  /**
+    Flag expecting one argument of type T. The argument is set using the
+    standard conversion function: to.
+  */
   Flag value( T )( string name, string description, ref T value ) {
     return custom( 
       name, 
@@ -91,6 +122,12 @@ public:
    );
   }
   
+  /**
+    Same as value, but with an additional bounds check for the argument. The minimum
+    and maximum bounds value are inclusive and are tested using the "<" operator.
+    If a flag should expect a number from 1 to 10, then the call should pass
+    1 as min and 10 as max.
+  */
   Flag bounded( T )( string name, string description, ref T value, T min, T max ) {
     return custom( 
       name,
@@ -110,8 +147,13 @@ public:
     );
   }
   
-  //For now, enumeration only supports string value and '|' separated candidates ( "c1|c2|c3|..." ).
-  //TODO: add support for any types.
+  /**
+    Up to now, this flag only supports string enumerations.
+    
+    The value is checked against the candidates and must be one of them ("=="). String enumerations are
+    separated by the "|" symbol. Therefore, if one should expect one of the following: "toto", "tata", "tutu", then
+    the candidates should be written like this: "toto|tata|tutu".
+  */
   Flag enumeration( T, Range )( string name, string description, ref T value, Range candidates ) if( is( T : string ) && is( Range : string ) ) {
     auto splitted = candidates.splitter( '|' );
     return custom(
@@ -127,6 +169,10 @@ public:
     );
   }
   
+  /**
+    This facility uses a map of words listing the possible values. If the token found was one of them,
+    then the value is set to the token's mapped value.
+  */
   Flag mapped( T )( string name, string description, ref T value, in T[ string ] map ) {
     return custom(
       name,
@@ -141,6 +187,10 @@ public:
     );
   }
   
+  /**
+    This factory method builds a flag that expect a string referring to a file. The
+    file is eagerly opened in the provided mode.
+  */
   Flag file( string name, string description, ref File file, string mode ) {
     return custom(
       name,
@@ -153,6 +203,12 @@ public:
     );
   }
   
+  /**
+    Main methode of the parser.
+    It parses the arguments using the internal list of known flags.
+    It returns every token that could not be parsed using the flags'
+    tokens parsers.
+  */
   string[] parse( string[] tokens ) in {
     assert( tokens !is null );
   } body {
@@ -172,6 +228,13 @@ public:
     return args[ 0 .. argsCount ];
   }
   
+  /**
+    Prints a help message based on the usage string passed.
+    The usage string is the most generic representation of the program
+    call. It is the first line shown.
+    
+    It then lists all known flags and their descriptions.
+  */
   void printHelp( string usage ) {
     writeln( "USAGE: ", usage );
     writeln( "FLAGS:" );
@@ -180,7 +243,6 @@ public:
       writeln( name, ": ", flag.description );
     }
   }
-
 }
 
 unittest {

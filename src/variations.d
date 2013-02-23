@@ -1,5 +1,5 @@
 /**
-  Module defining a set of common token variations for passe phrases.
+  Module defining a set of common variations for pass phrases.
 */
 module variations;
 

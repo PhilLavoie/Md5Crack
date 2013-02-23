@@ -1,3 +1,6 @@
+/**
+  Module defining a set of facilities to ease the parsing of the command line.
+*/
 module flags;
 
 import std.algorithm;
@@ -208,6 +211,9 @@ public:
     It parses the arguments using the internal list of known flags.
     It returns every token that could not be parsed using the flags'
     tokens parsers.
+    
+    Note that the tokens are expected to be passed as received by the
+    program's entry point.
   */
   string[] parse( string[] tokens ) in {
     assert( tokens !is null );

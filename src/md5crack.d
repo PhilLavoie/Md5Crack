@@ -153,19 +153,94 @@ void main( string[] args ) {
   }
 }
 
-//TODO: add support to read hashes as declared in labo 02.
+enum HashesFileFormat {
+  hashesOnly,
+  userListing,
+  empty,
+  invalid
+}
+
+string extractHash( HashesFileFormat format )( string line ) if( format == HashesFileFormat.hashesOnly ) {
+  return line;
+}
+
+string extractHash( HashesFileFormat format )( string line ) if( format == HashesFileFormat.userListing ) {
+  auto result = line.find( ':' );
+  if( result.length < 33 ) {
+    return result[ 0 .. 0 ];
+  }
+  return result[ 1 .. 33 ];
+}
+
+bool isOfFormat( HashesFileFormat format )( string line ) {
+  try {
+    auto hash = Md5Hash.fromHexa( extractHash!( format )( line ) );
+  } catch( Throwable t ) {
+    return false;
+  }
+  return true;
+}
+
+HashesFileFormat determineHashesFileFormat( File file ) {
+  scope( exit ) {
+    file.rewind(); //Reset the position indicator.
+  }
+  
+  string line;  
+  try {
+    do {
+      line = file.readln();
+    } while( isWhite( line ) );
+  } catch( Exception e ) {
+    return HashesFileFormat.empty;
+  }
+ 
+  if( isOfFormat!( HashesFileFormat.hashesOnly )( line ) ) {
+    return HashesFileFormat.hashesOnly;
+  }
+  if( isOfFormat!( HashesFileFormat.userListing )( line ) ) {
+    return HashesFileFormat.userListing;
+  }
+  return HashesFileFormat.invalid;
+}
+
+bool isWhite( string line ) {
+  return line.strip.empty;
+}
+
 /**
   Load hashes from a file. Every hash should be separated by a new line. Outputs the result in
   the provided output. Returns the number of hashes read.
 */
 size_t loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Hash ) ) {
   size_t noHashes = 0;
+  
+  auto format = determineHashesFileFormat( file );
+  
+  debug {
+    writeln( "Format is: ", format );
+  }
+  string function( string ) hashExtractor;
+  switch( format ) {
+  case HashesFileFormat.hashesOnly:
+    hashExtractor = &extractHash!( HashesFileFormat.hashesOnly );    
+    break;
+  case HashesFileFormat.userListing:
+    hashExtractor = &extractHash!( HashesFileFormat.userListing );
+    break;
+  case HashesFileFormat.empty:
+    return cast( size_t )0;
+  default:
+    throw new Exception( "could not determine the format of the hashes file" );  
+  }
+  
   //For each line, parse the hash and add it to the structure.
   foreach( buffer; file.byLine ) {
     string line = cast( string )buffer;
     //Ignore white lines.
-    if( line.strip.empty ) { continue; }
-    Md5Hash hash = Md5Hash.fromHexa( cast( string )line );
+    if( isWhite( line ) ) { continue; }
+    
+    Md5Hash hash = Md5Hash.fromHexa( hashExtractor( line ) );
     output.put( hash );
     ++noHashes;
   }

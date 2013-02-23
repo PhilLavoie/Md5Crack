@@ -6,6 +6,7 @@ module md5hash;
 import std.ascii;
 import std.exception;
 import std.conv;
+import std.string;
 
 /**
   Structure representing a md5 hash value as a 16 bytes array.
@@ -64,8 +65,9 @@ struct Md5Hash {
     The result is lowercase.
   */
   static typeof( this ) fromHexa( string hexa ) in {
-    assert( hexa.length == 32, "expected a hash string of 32 hexadecimal symbols (16 bytes) but got: " ~ hexa );
+    assert( hexa.strip.length == 32, "expected a hash string of 32 hexadecimal symbols (16 bytes) but got: " ~ hexa );
   } body {
+    hexa = hexa.strip;
     typeof( this ) result;
     size_t resIndex = 0;
 

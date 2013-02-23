@@ -42,11 +42,9 @@ struct Variations( PermsType, VarsRange ) {
   */
   @property string[] front() {
     _buffer = _perms.front();
-    
-    for( size_t i = 0; i < _buffer.length; ++i ) {
-      foreach( variation; _variations ) {
-        _buffer[ i ] = variation( _buffer[ i ] );
-      }
+   
+    foreach( variation; _variations ) {
+      _buffer = variation( _buffer );
     }
     
     return cast( string[] )_buffer;

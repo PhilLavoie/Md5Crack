@@ -2,7 +2,7 @@ module md5crack;
 
 import config;
 import md5hash;
-import variations;
+import ranges;
 
 import std.stdio;
 import std.conv;

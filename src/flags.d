@@ -84,7 +84,7 @@ public:
       name, 
       description, 
       ( string[] tokens ) { 
-        enforce( tokens !is null && 0 < tokens.length, "expected one argument for flag " ~ name );
+        enforceNoArgs( tokens, name, 1 );
         value = to!T( tokens[ 0 ] ); 
         return cast( size_t )1;
       } 
@@ -96,7 +96,8 @@ public:
       name,
       description, 
       ( string[] tokens ) { 
-        enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag " ~ name );
+        enforceNoArgs( tokens, name, 1 );
+        
         T temp = to!T( tokens[ 0 ] );
         if( temp < min ) {
           throw new Exception( "Parsed value for flag " ~ name ~ " is under minimum boundary: " ~ to!string( min ) );
@@ -117,7 +118,7 @@ public:
       name,
       description,
       ( string[] tokens ) {
-        enforce( tokens !is null && tokens.length, "Expected one argument for flag " ~ name );
+        enforceNoArgs( tokens, name, 1 );
         T temp = tokens[ 0 ];
         enforce( splitted.canFind( temp ), temp ~ " is not one of possible values: " ~ splitted.to!string ~ " expected for flag " ~ name );
         value = temp;
@@ -131,7 +132,7 @@ public:
       name,
       description,
       ( string[] tokens ) {
-        enforce( tokens !is null && tokens.length, "Expected one argument for flag " ~ name );
+        enforceNoArgs( tokens, name, 1 );
         string temp = tokens[ 0 ];
         enforce( temp in map, temp ~ " is not one of possible values: " ~ map.keys.to!string ~ " expected for flag " ~ name );
         value = map[ temp ];
@@ -145,7 +146,7 @@ public:
       name,
       description,
       ( string[] tokens ) {
-        enforce( tokens !is null && 0 < tokens.length, "Expected one argument for flag " ~ name );
+        enforceNoArgs( tokens, name, 1 );
         file = File( tokens[ 0 ], mode );
         return cast( size_t )1;
       }

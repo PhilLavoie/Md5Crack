@@ -2,6 +2,7 @@ module config;
 
 import flags;
 import md5hash;
+import variations;
 
 import std.stdio;
 import std.conv;
@@ -12,14 +13,6 @@ import std.file;
 
 //Type of the integer determining the size of the number of permutations.
 alias NoPerms = size_t;
-
-enum Variation {
-  camelCase,
-  invertedCamelCase,
-  toUpper,
-  toLower,
-  reverse
-}
 
 struct Config {
   File[] dictionaries;
@@ -35,7 +28,7 @@ struct Config {
   File dictionaryOut;
   
   Variation[] variations;
-  
+    
   @property bool useDictionaries() { return dictionaries.length != 0; }
   @property bool useHashesFile() { return hashesFile.isOpen(); }
   @property bool generateDictionary() { return dictionaryOut.isOpen(); }
@@ -120,7 +113,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--camel-case",
     "Camel case variation.",
     ( string[] tokens ) {
-      varTmp.insertBack( Variation.camelCase );
+      varTmp.insertBack( new CamelCase() );
       return cast( size_t )0;
     }
   );
@@ -129,7 +122,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--inverted-camel-case",
     "Inverted camel case variation.",
     ( string[] tokens ) {
-      varTmp.insertBack( Variation.invertedCamelCase );
+      varTmp.insertBack( new InvertedCamelCase() );
       return cast( size_t )0;
     }
   );
@@ -138,7 +131,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--to-upper",
     "All caps variation.",
     ( string[] tokens ) {
-      varTmp.insertBack( Variation.toUpper );
+      varTmp.insertBack( new ToUpper() );
       return cast( size_t )0;
     }  
   );
@@ -147,7 +140,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--to-lower",
     "All lowercase variation.",
     ( string[] tokens ) {
-      varTmp.insertBack( Variation.toLower );
+      varTmp.insertBack( new ToLower() );
       return cast( size_t )0;
     }  
   );
@@ -156,14 +149,29 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--reverse",
     "Reverse variation.",
     ( string[] tokens ) {
-      varTmp.insertBack( Variation.reverse );
+      varTmp.insertBack( new Reverse() );
       return cast( size_t )0;
     }  
   );
   
+  DList!Substitution subTmp;
+  
+  parser.custom(
+    "--sub",
+    "Character substitution variation.",
+    ( string[] tokens ) {
+      enforceNoArgs( tokens, "--sub", 2 );
+      auto from = tokens[ 0 ].to!char;
+      auto to = tokens[ 1 ].to!char;
+      subTmp.insertBack( new Substitution( from, to ) );      
+      return cast( size_t )2;
+    }
+  
+  );
   
   bool help = false;
   parser.trigger( "-h", "Prints help menu.", help );
+  parser.trigger( "--help", "Prints help menu.", help );
   
   auto args = parser.parse( cmdArgs );
   
@@ -195,6 +203,6 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   
   //Copy variations into configuration.
   cfg.variations = new Variation[ count( varTmp[] ) ];
-  copy( varTmp[], cfg.variations );
+  copy( varTmp[], cfg.variations );  
 }
 

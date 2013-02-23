@@ -80,7 +80,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   
   parser.custom(
     "--try",
-    "Try only provided hash.",
+    "Try only provided pass phrase.",
     ( string[] tokens ) {
       enforceNoArgs( tokens, "--try", 1 );
     

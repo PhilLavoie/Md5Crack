@@ -1,3 +1,12 @@
+/**
+  Module providing ranges to grealty facilitate the looping on dictionary
+  permutations/variations.
+  
+  In this module's terminology, a permutation is an arrangement of pass phrases
+  obtained from a dictionary. A variation is the result of applying string transforms
+  to a given permutation. This module only publicize the variations range. However,
+  if no string transforms are applied, than it returns permutations.  
+*/
 module ranges;
 
 import config;
@@ -9,18 +18,28 @@ import std.conv;
 import std.ascii;
 import std.string;
 
-struct Variations( PermsType, VarsType ) {
-  private PermsType _perms;
-  private VarsType _variations;
+/**
+  Range returning string transforms performed on dictionary permutations.
+  If no transforms are to be applied, then it simply returns permutations.
+*/
+struct Variations( PermsType, VarsRange ) {
+  private PermsType _perms;       //Range providing permutations.
+  private VarsRange _variations;  //Range of string transforms.
+  private string[] _buffer;       //Buffer to keep results.
   
-  private string[] _buffer;
-  
-  private this( PermsType perms, VarsType variations ) {
+  /**
+    Constructor.
+  */
+  private this( PermsType perms, VarsRange variations ) {
     _perms = perms;
     _variations = variations;
   }
   
-  //Forward range primitives.
+  //Forward range primitives.    
+  /**
+    The value pointed to by the return of this call changes
+    upon range mutation (calling popFront()).
+  */
   @property string[] front() {
     _buffer = _perms.front();
     
@@ -38,15 +57,21 @@ struct Variations( PermsType, VarsType ) {
   void popFront() {
     _perms.popFront();
   }
-  auto save() { return this; }
-  
+  auto save() { return this; }  
 }
 
+/**
+  Factory functions returning the variations range corresponding to the given configuration
+  and operating using the given dictionaries.
+  The order of dictionaries is important, as they will be used in a cyclic fashion to
+  determine the candidates of a given index in a permutation (the 1st index uses the 1st dictionary, 
+  the 2nd uses the 2nd, etc...). If the number of dictionaries provided is lower than
+  the number of permutations requested, then they are cyclicly assigned using modulus operations.
+*/
 auto variationsFor( RoR )( in ref Config cfg, RoR dictionaries ) {
   alias PermsType = typeof( permutationsFor( cfg, dictionaries ) );
-  alias VarsType = typeof( cfg.variations );
-  
-  return Variations!( PermsType, VarsType )( permutationsFor( cfg, dictionaries ), cfg.variations );
+  alias VarsRange = typeof( cfg.variations );  
+  return Variations!( PermsType, VarsRange )( permutationsFor( cfg, dictionaries ), cfg.variations );
 }
 
 
@@ -62,6 +87,9 @@ private struct Permutations( Range ) {
   private Range[] _ranges;
   private string[] _buffer;
   
+  /**
+    Constructor.
+  */
   private this( Range[] sources, typeof( _current ) min, typeof( _max ) max ) in { 
     assert( 0 < min, "expected min: " ~ min.to!string ~ " to be above 0" );
     assert( 0 < max, "expected max: " ~ max.to!string ~ " to be above 0" );
@@ -88,37 +116,20 @@ private struct Permutations( Range ) {
     _buffer = new string[ max ];
   }
   
+  //Forward range primitives.
   /**
-    Returns the current permutation.
-    Note that the array returned is one managed internally. Therefore, its value will change
-    after each permutation change, meaning:
-    auto perm1 = range.front;
-    range.popFront();
-    auto perm2 = range.front;
-    if( perm1.length == perm2.length )
-      assert( equal( perm1, perm2 ) ); //The content pointed to by perm1 has changed.
+    The value pointed to by the return of this call changes
+    upon range mutation (calling popFront()).
   */
   @property string[] front() { 
     return readPermutation();
   }
-  
-  /**
-    Returns true when no more permutation can be generated.
-  */
   @property bool empty() {
     return _max < _current;
   }
-  
-  /**
-    Generates a subsequent permutation.
-  */
   void popFront() {
     increment( _current - 1 );
-  }
-  
-  /**
-    Returns a copy of this range.
-  */
+  }  
   auto save() { return this; }
   
   /**
@@ -158,7 +169,7 @@ private struct Permutations( Range ) {
   /**
     Sets the indexed range to its initial state (corresponding source).
     If there are less sources than permuations, then the sources are cyclicly
-    assigned.  
+    assigned using modulo.  
   */
   private void initializeStateOf( typeof( _max ) index ) in {
     assert( index < _max, "trying to acces the initial state of an out of bounds index: " ~ index.to!string ~ " maximum value accepted: " ~ _max.to!string );
@@ -167,7 +178,9 @@ private struct Permutations( Range ) {
   }
 }
 
-
+/**
+  Returns the permutations for the given configuration and dictionaries.
+*/
 private auto permutationsFor( Range )( in ref Config cfg, Range[] inputs ) if( isForwardRange!( Range ) && is( ElementType!Range == string ) ) {
   return Permutations!Range( inputs, cfg.minPermutations, cfg.maxPermutations );
 }

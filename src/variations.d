@@ -6,10 +6,17 @@ module variations;
 import std.string;
 import std.ascii;
 
+/**
+  A variation is a kind of string transform used to modify
+  a variation based on given rules.
+*/
 interface Variation {
   string opCall( string token ) const;
 }
 
+/**
+  Capitalizes the first letter and lowercases the rest.
+*/
 class CamelCase: Variation {
   override string opCall( string token ) const {
     if( token.length == 0 ) { return token; }
@@ -23,6 +30,9 @@ class CamelCase: Variation {
   }
 }
 
+/**
+  Lowercases the first letter and capitalize the rest.
+*/
 class InvertedCamelCase: Variation {
   override string opCall( string token ) const {
     if( token.length == 0 ) { return token; }
@@ -36,6 +46,9 @@ class InvertedCamelCase: Variation {
   }
 }
 
+/**
+  Reverses the token.
+*/
 class Reverse: Variation {
   override string opCall( string token ) const {
     char[] result = new char[ token.length ];
@@ -46,18 +59,27 @@ class Reverse: Variation {
   } 
 }
 
+/**
+  Capitalizes all letters.
+*/
 class ToUpper: Variation {
   override string opCall( string token ) const {
     return toUpper( token );
   } 
 }
 
+/**
+  Lowercases all letters.
+*/
 class ToLower: Variation {
   override string opCall( string token ) const {
     return toLower( token );
   } 
 }
 
+/**
+  Substitutes every occurrences of one char for another.
+*/
 class Substitution: Variation {
   private char _from;
   private char _to;

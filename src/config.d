@@ -17,16 +17,13 @@ alias NoPerms = size_t;
 struct Config {
   File[] dictionaries;
   File hashesFile;
-  bool plain = true;
-  bool capFirst = false;
   NoPerms minPermutations = 1;
   NoPerms maxPermutations = 1;
   bool tryOnly = false;
   string tryString;
   bool inlineHash = false;
   Md5Hash hash;
-  File dictionaryOut;
-  
+  File dictionaryOut;  
   Variation[] variations;
     
   @property bool useDictionaries() { return dictionaries.length != 0; }
@@ -141,6 +138,24 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "All lowercase variation.",
     ( string[] tokens ) {
       varTmp.insertBack( new ToLower() );
+      return cast( size_t )0;
+    }  
+  );
+  
+  parser.custom(
+    "--up-odd-low-even",
+    "Alternate casing. Odd indexes are capitalized and even indexes are lower cased.",
+    ( string[] tokens ) {
+      varTmp.insertBack( new UpOddDownEven() );
+      return cast( size_t )0;
+    }  
+  );
+  
+  parser.custom(
+    "--low-odd-up-even",
+    "Alternate casing. Odd indexes are lower cased and even indexes are capitalized.",
+    ( string[] tokens ) {
+      varTmp.insertBack( new LowOddUpEven() );
       return cast( size_t )0;
     }  
   );

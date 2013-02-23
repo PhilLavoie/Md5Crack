@@ -71,6 +71,7 @@ class InvertedCamelCase: Variation {
 */
 class Reverse: Variation {
   string opCall( string token ) const {
+    if( token.length == 0 ) { return token; }
     char[] result = new char[ token.length ];
     for( size_t i = 0; i < token.length; ++i ) {
       result[ i ] = token[ $ - 1 - i ];
@@ -94,7 +95,15 @@ class Reverse: Variation {
 */
 class ToUpper: Variation {
   string opCall( string token ) const {
-    return toUpper( token );
+    if( token.length == 0 ) { return token; }
+    char[] result = new char[ token.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      if( i % 2 == 1 ) {
+        result[ i ] = toUpper( token[ i ] );
+      } else {
+        result[ i ] = toLower( token[ i ] );
+      }
+    }
   } 
   
   override string[] opCall( string[] tokens ) const in {
@@ -112,6 +121,52 @@ class ToUpper: Variation {
   Lowercases all letters.
 */
 class ToLower: Variation {
+  string opCall( string token ) const {
+    if( token.length == 0 ) { return token; }
+    char[] result = new char[ token.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      if( i % 2 == 1 ) {
+        result[ i ] = toLower( token[ i ] );
+      } else {
+        result[ i ] = toUpper( token[ i ] );
+      }
+    }
+  } 
+  
+  override string[] opCall( string[] tokens ) const in {
+    assert( tokens !is null && 0 < tokens.length, "expected at least one token" );
+  } body {
+    string[] result = new string[ tokens.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      result[ i ] = this.opCall( tokens[ i ] );
+    }
+    return result;
+  }
+}
+
+/**
+  Uppercases odd indexes and lowercases even indexes.
+*/
+class UpOddLowEven: Variation {
+  string opCall( string token ) const {
+    char[] result = new char[ token ]
+  } 
+  
+  override string[] opCall( string[] tokens ) const in {
+    assert( tokens !is null && 0 < tokens.length, "expected at least one token" );
+  } body {
+    string[] result = new string[ tokens.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      result[ i ] = this.opCall( tokens[ i ] );
+    }
+    return result;
+  }
+}
+
+/**
+  Lowercases odd indexes and uppercases even indexes.
+*/
+class LowOddUpEven: Variation {
   string opCall( string token ) const {
     return toLower( token );
   } 

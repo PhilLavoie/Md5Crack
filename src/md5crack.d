@@ -59,8 +59,6 @@ alias Dictionary = string[];
 void main( string[] args ) {
   Config cfg;
 
-  
-  //TODO move this try catch logic in config.
   try {
     cfg.parse( args );
     

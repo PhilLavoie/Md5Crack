@@ -154,8 +154,6 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     }  
   );
   
-  DList!Substitution subTmp;
-  
   parser.custom(
     "--sub",
     "Character substitution variation.",
@@ -163,7 +161,7 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
       enforceNoArgs( tokens, "--sub", 2 );
       auto from = tokens[ 0 ].to!char;
       auto to = tokens[ 1 ].to!char;
-      subTmp.insertBack( new Substitution( from, to ) );      
+      varTmp.insertBack( new Substitution( from, to ) );      
       return cast( size_t )2;
     }
   

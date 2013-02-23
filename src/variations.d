@@ -95,15 +95,7 @@ class Reverse: Variation {
 */
 class ToUpper: Variation {
   string opCall( string token ) const {
-    if( token.length == 0 ) { return token; }
-    char[] result = new char[ token.length ];
-    for( size_t i = 0; i < result.length; ++i ) {
-      if( i % 2 == 1 ) {
-        result[ i ] = toUpper( token[ i ] );
-      } else {
-        result[ i ] = toLower( token[ i ] );
-      }
-    }
+    return toUpper( token );
   } 
   
   override string[] opCall( string[] tokens ) const in {
@@ -122,15 +114,7 @@ class ToUpper: Variation {
 */
 class ToLower: Variation {
   string opCall( string token ) const {
-    if( token.length == 0 ) { return token; }
-    char[] result = new char[ token.length ];
-    for( size_t i = 0; i < result.length; ++i ) {
-      if( i % 2 == 1 ) {
-        result[ i ] = toLower( token[ i ] );
-      } else {
-        result[ i ] = toUpper( token[ i ] );
-      }
-    }
+    return toLower( token );
   } 
   
   override string[] opCall( string[] tokens ) const in {
@@ -147,9 +131,18 @@ class ToLower: Variation {
 /**
   Uppercases odd indexes and lowercases even indexes.
 */
-class UpOddLowEven: Variation {
+class LowEvenUpOdd: Variation {
   string opCall( string token ) const {
-    char[] result = new char[ token ]
+    if( token.length == 0 ) { return token; }
+    char[] result = new char[ token.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      if( i % 2 == 0 ) {
+        result[ i ] = cast( char )toLower( token[ i ] );
+      } else {        
+        result[ i ] = cast( char )toUpper( token[ i ] );
+      }
+    }
+    return cast( string )result;
   } 
   
   override string[] opCall( string[] tokens ) const in {
@@ -166,9 +159,18 @@ class UpOddLowEven: Variation {
 /**
   Lowercases odd indexes and uppercases even indexes.
 */
-class LowOddUpEven: Variation {
+class UpEvenLowOdd: Variation {
   string opCall( string token ) const {
-    return toLower( token );
+    if( token.length == 0 ) { return token; }
+    char[] result = new char[ token.length ];
+    for( size_t i = 0; i < result.length; ++i ) {
+      if( i % 2 == 0 ) {
+        result[ i ] = cast( char )toUpper( token[ i ] );
+      } else {        
+        result[ i ] = cast( char )toLower( token[ i ] );
+      }
+    }
+    return cast( string )result;
   } 
   
   override string[] opCall( string[] tokens ) const in {

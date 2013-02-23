@@ -36,7 +36,6 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   assert( 0 < cmdArgs.length, "expected at least the command line call" );
 } body {
   Parser parser;  
-  parser.trigger( "--cap-first", "Capitalize first letter of tokens.", cfg.capFirst );
   parser.bounded( 
     "--perms-min",
     "Minimum pass phrase permutations (inclusive). Default is the number of dictionaries.",
@@ -143,19 +142,19 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
   );
   
   parser.custom(
-    "--up-odd-low-even",
-    "Alternate casing. Odd indexes are capitalized and even indexes are lower cased.",
+    "--low-even-up-odd",
+    "Alternate casing. Even indexes are lower cased and odd indexes are upper cased. The first index is 0.",
     ( string[] tokens ) {
-      varTmp.insertBack( new UpOddDownEven() );
+      varTmp.insertBack( new LowEvenUpOdd() );
       return cast( size_t )0;
     }  
   );
   
   parser.custom(
-    "--low-odd-up-even",
-    "Alternate casing. Odd indexes are lower cased and even indexes are capitalized.",
+    "--up-even-low-odd",
+    "Alternate casing. Even indexes are upper cased and odd indexes are lower cased. The first index is 0.",
     ( string[] tokens ) {
-      varTmp.insertBack( new LowOddUpEven() );
+      varTmp.insertBack( new UpEvenLowOdd() );
       return cast( size_t )0;
     }  
   );

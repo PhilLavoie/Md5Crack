@@ -102,6 +102,7 @@ void main( string[] args ) {
     }
     
     if( cfg.crackHashes ) {
+    
       Md5Hash[] hashes;
       if( cfg.useHashesFile ) {
         DList!Md5Hash hashesTmp;
@@ -115,6 +116,7 @@ void main( string[] args ) {
       }
       assert( hashes !is null && 0 < hashes.length, "error constructing hashes list" );
       
+      //TODO: change the inner loop place to prevent the most cache misses possible.
       HASH: foreach( hash; hashes[] ) {
         writeln( "Craking hash: ", hash );
              
@@ -139,6 +141,7 @@ void main( string[] args ) {
 
     } 
     
+    //Write every variations to the output dictionary if requested by user.
     if( cfg.generateDictionary ) {
       foreach( variation; variationsFor( cfg, dictionaries ) ) {
         cfg.dictionaryOut.writeln( variation.joiner );       
@@ -236,7 +239,7 @@ size_t loadHashes( Out )( File file, Out output ) if( isOutputRange!( Out, Md5Ha
   foreach( buffer; file.byLine ) {
     string line = cast( string )buffer;
     //Ignore white lines.
-    if( isWhite( line ) ) { continue; }
+    if( isWhite( line ) ) { continue; }    
     
     Md5Hash hash = Md5Hash.fromHexa( hashExtractor( line ) );
     output.put( hash );
@@ -257,6 +260,14 @@ size_t loadDictionary( Out )( File file, Out output ) if( isOutputRange!( Out, s
   //to the dictionary.
   foreach( buffer; file.byLine ) {
     string passphrase = buffer.idup;  //Make an immutable copy, a.k.a. a string.
+    
+    //For now, ignore malformed utf strings.
+    try {
+      std.utf.validate( passphrase );
+    } catch( Throwable t ) {
+      continue;
+    }
+    
     output.put( passphrase );
     ++noPass;
   }  

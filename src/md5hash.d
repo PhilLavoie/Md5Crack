@@ -16,7 +16,7 @@ struct Md5Hash {
   ubyte[ 16 ] _hash;
   
   /**
-    Convenience constructor.
+    Constructor.
   */
   this( ubyte[ 16 ] hash ) { _hash = hash; }
   

@@ -80,8 +80,8 @@ auto variationsFor( RoR )( in ref Config cfg, RoR dictionaries ) {
 */
 private struct Permutations( Range ) {
   private Range[] _sources;
-  private NoPerms _current;
-  private NoPerms _max;
+  private size_t _current;
+  private size_t _max;
   private Range[] _ranges;
   private string[] _buffer;
   

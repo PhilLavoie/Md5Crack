@@ -1,24 +1,25 @@
+/**
+  This module is reponsible for defining the program configuration, setting
+  up the command line parser and finally extracting the program arguments.
+*/
 module config;
 
 import flags;
 import md5hash;
 import variations;
 
-import std.stdio;
-import std.conv;
-import std.exception;
-import std.container;
-import std.algorithm;
-import std.file;
-
-//Type of the integer determining the size of the number of permutations.
-alias NoPerms = size_t;
+import std.stdio;     //IO functions.
+import std.conv;      //Standard type conversion functions (like "to").
+import std.exception; //Exception library.
+import std.container; //Standard containers.
+import std.algorithm; //Standard algorithms.
+import std.file;      //File type.
 
 struct Config {
   File[] dictionaries;
   File hashesFile;
-  NoPerms minPermutations = 1;
-  NoPerms maxPermutations = 1;
+  size_t minPermutations = 1;
+  size_t maxPermutations = 1;
   bool tryOnly = false;
   string tryString;
   bool inlineHash = false;
@@ -40,15 +41,15 @@ void parse( ref Config cfg, string[] cmdArgs ) in {
     "--perms-min",
     "Minimum pass phrase permutations (inclusive). Default is the number of dictionaries.",
     cfg.minPermutations,
-    cast( NoPerms )1,
-    NoPerms.max 
+    cast( size_t )1,
+    size_t.max 
   );
   parser.bounded( 
     "--perms-max", 
     "Maximum pass phrase permutations (inclusive). Default is the number of dictionaries.", 
     cfg.maxPermutations, 
-    cast( NoPerms )1, 
-    NoPerms.max 
+    cast( size_t )1, 
+    size_t.max 
   );
   
   parser.file( "-hf", "File containing hashes to be cracked.", cfg.hashesFile, "r" );

@@ -8,12 +8,12 @@ import flags;
 import md5hash;
 import variations;
 
-import std.stdio;     //IO functions.
-import std.conv;      //Standard type conversion functions (like "to").
-import std.exception; //Exception library.
-import std.container; //Standard containers.
-import std.algorithm; //Standard algorithms.
-import std.file;      //File type.
+import std.stdio;     
+import std.conv;      
+import std.exception; 
+import std.container; 
+import std.algorithm; 
+import std.file;      
 
 /**
   Program configuration definition.
@@ -76,7 +76,7 @@ void parse( ref Config cfg, string[] cmdArgs ) {
   
   //Hashes, output and dictionaries files.
   parser.file( 
-    "-hf", 
+    "--hashes-file", 
     "File containing hashes to be cracked. The file is expected to either hold a 32 symbols long hexadecimal hash on each line or to have "
     "a format similar to the lab 2 statement.",
     cfg.hashesFile, 

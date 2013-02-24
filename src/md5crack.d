@@ -12,8 +12,6 @@ import std.range;
 import std.container;
 import std.string;
 
-//TODO: add combinations for words: camel case, all caps, different combination of words, etc...
-
 template canInsertBack( T ) {
   static if( 
     is( 
@@ -89,10 +87,10 @@ void main( string[] args ) {
         }
         
       }      
-    } else if( cfg.tryOnly ) {
+    } else if( cfg.inlinePassProvided ) {
       //Arbitrarily chose a file name for the try.
       dictionariesByFilenames[ "try" ] = new string[ 1 ];
-      dictionariesByFilenames[ "try" ][ 0 ] = cfg.tryString;
+      dictionariesByFilenames[ "try" ][ 0 ] = cfg.inlinePass;
     } 
     assert( dictionariesByFilenames !is null && 0 < dictionariesByFilenames.length, "error constructing the dictionaries" );
     
@@ -110,13 +108,12 @@ void main( string[] args ) {
         cfg.hashesFile.close();
         hashes = new Md5Hash[ noHashes ];
         copy( hashesTmp[], hashes );
-      } else if( cfg.inlineHash ) {
+      } else if( cfg.inlineHashProvided ) {
         hashes = new Md5Hash[ 1 ];
-        hashes[ 0 ] = cfg.hash;
+        hashes[ 0 ] = cfg.inlineHash;
       }
       assert( hashes !is null && 0 < hashes.length, "error constructing hashes list" );
       
-      //TODO: change the inner loop place to prevent the most cache misses possible.
       HASH: foreach( hash; hashes[] ) {
         writeln( "Craking hash: ", hash );
              
@@ -146,9 +143,9 @@ void main( string[] args ) {
       foreach( variation; variationsFor( cfg, dictionaries ) ) {
         cfg.dictionaryOut.writeln( variation.joiner );       
       }    
-    }
-    
-    
+    }    
+  
+  //Just crash if an exception occurred.
   } catch( Exception e ) {
     writeln( e.msg );
   }

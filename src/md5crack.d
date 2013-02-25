@@ -34,11 +34,12 @@ void main( string[] args ) {
     //Parse command line.
     cfg.parse( args );
     
-    //In order to avoid loading twice the same dictionary, we stored the loaded
-    //words in a dictionary associating it with its filename.
-    Dictionary[ string ] dictionariesByFilenames;
-    
+    Dictionary[] dictionaries;
     if( cfg.useDictionaries ) {
+    
+      //In order to avoid loading twice the same dictionary, we stored the loaded
+      //words in a dictionary associating it with its filename.
+      Dictionary[ string ] dictionariesByFilenames;
       
       //For each dictionary, we either load the dictionary or move on if its already
       //been loaded.
@@ -57,21 +58,25 @@ void main( string[] args ) {
         //Close dictionary.      
         d.close();       
       }  
+      
+      //We set up the list of dictionaries for variations generation.
+      //We just copy the array pointer from the map.
+      dictionaries = new Dictionary[ cfg.dictionaries.length ];
+      for( size_t i = 0; i < dictionaries.length; ++i ) {
+        dictionaries[ i ] = dictionariesByFilenames[ cfg.dictionaries[ i ].name ];
+      }
 
     //If no dictionaries were provided, then we expect an inline passe phrase.
     } else if( cfg.inlinePassProvided ) {
-      //Arbitrarily chose a file name for the try.
-      dictionariesByFilenames[ "try" ] = new string[ 1 ];
-      dictionariesByFilenames[ "try" ][ 0 ] = cfg.inlinePass;
+      //One dictionary.
+      dictionaries = new Dictionary[ 1 ];
+      //Of one word only.
+      dictionaries[ 0 ] = new string[ 1 ];
+      dictionaries[ 0 ][ 0 ] = cfg.inlinePass;
     } 
-    assert( dictionariesByFilenames !is null && 0 < dictionariesByFilenames.length, "error constructing the dictionaries" );
+    assert( dictionaries !is null && 0 < dictionaries.length, "error constructing the dictionaries" );
     
-    //We set up the list of dictionaries for variations generation.
-    //We just copy the array pointer from the map.
-    Dictionary[] dictionaries = new Dictionary[ cfg.dictionaries.length ];
-    for( size_t i = 0; i < dictionaries.length; ++i ) {
-      dictionaries[ i ] = dictionariesByFilenames[ cfg.dictionaries[ i ].name ];
-    }
+    
     
     if( cfg.crackHashes ) {
     
